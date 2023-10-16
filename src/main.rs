@@ -167,19 +167,14 @@ fn main() -> io::Result<()> {
     }
 
     if let Some(command) = args.command {
-        let _index = {
-            let index_file = data_dir.join("devcontainer-index.json");
-            let di = registry::read_devcontainer_index(index_file);
+        let index_file = data_dir.join("devcontainer-index.json");
 
-            if let Err(err) = &di {
-                if err.kind() == io::ErrorKind::NotFound {
-                    // suggested user action
-                    eprintln!("Missing devcontainer-index.json.\n\n\tRun `{} --pull-index`.\n", prog_name);
-                }
-            }
+        if !index_file.exists() {
+            // suggested user action
+            eprintln!("Missing devcontainer-index.json.\n\n\tRun `{} --pull-index`.\n", prog_name);
+        }
 
-            di
-        }?;
+        let _index = registry::read_devcontainer_index(index_file)?;
 
         match command {
             Commands::Init { workspace_folder, .. } => {
