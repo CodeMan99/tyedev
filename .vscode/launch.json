@@ -1,0 +1,59 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "inputs": [
+        {
+            "id": "enterCommand",
+            "description": "Pick a command argument",
+            "type": "pickString",
+            "options": ["init", "inspect", "list", "search"],
+            "default": "search"
+        },
+        {
+            "id": "enterOptions",
+            "description": "Pass flag and option arguments",
+            "type": "promptString"
+        }
+    ],
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'devconf'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=devconf",
+                    "--package=devconf"
+                ],
+                "filter": {
+                    "name": "devconf",
+                    "kind": "bin"
+                }
+            },
+            "args": ["${input:enterCommand}", "${input:enterOptions}"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'devconf'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=devconf",
+                    "--package=devconf"
+                ],
+                "filter": {
+                    "name": "devconf",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

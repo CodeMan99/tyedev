@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
 use serde::{Deserialize, Serialize};
+use serde_json::Value as JsonValue;
 
 // PartialOrd, Hash, Eq, Ord
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
@@ -177,9 +178,37 @@ pub fn pull_devcontainer_index<P: AsRef<Path>>(current_dir: P) -> Result<(), Err
     })
 }
 
+/// Read and parse the given filename.
 pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<DevcontainerIndex, Error> {
     let file = File::open(filename)?;
-    let index = serde_json::from_reader(file)?;
+    let json_value: JsonValue = serde_json::from_reader(file)?;
+    let collections: Vec<Collection> =
+        json_value
+        .as_object()
+        .and_then(|obj_map| obj_map.get("collections"))
+        .and_then(|collections_value| collections_value.as_array())
+        .map_or_else(
+            || Err(Error::new(ErrorKind::InvalidData, "Unexpected json shape")),
+            |arr| {
+                let parsed =
+                    arr
+                    .iter()
+                    // TODO: Skip errors of a single feature or template, not the entire collection
+                    .filter_map(|value| {
+                        match serde_json::from_value::<Collection>(value.to_owned()) {
+                            Ok(collection) => Some(collection),
+                            Err(_) => {
+                                // TODO: parse the collection fields so that source_information can be displayed here.
+                                eprintln!("WARNING: Skipping collection due to parsing error");
+                                None
+                            },
+                        }
+                    })
+                    .collect();
 
-    Ok(index)
+                Ok(parsed)
+            }
+        )?;
+
+    Ok(DevcontainerIndex { collections })
 }
