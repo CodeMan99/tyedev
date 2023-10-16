@@ -1,0 +1,11 @@
+[package]
+name = "devconf"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.4.6", features = ["derive"] }
+dirs = "5.0.1"
+ratatui = "0.23.0"
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.107"
