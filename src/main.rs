@@ -1,6 +1,7 @@
 use std::env;
 use std::ffi::OsStr;
 use std::fs;
+use std::fmt;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
@@ -16,6 +17,15 @@ enum CollectionCategory {
     #[default]
     Templates,
     Features,
+}
+
+impl fmt::Display for CollectionCategory {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Features => write!(f, "{}", "feature"),
+            Self::Templates => write!(f, "{}", "template"),
+        }
+    }
 }
 
 impl ValueEnum for CollectionCategory {
@@ -101,14 +111,6 @@ enum InspectDisplay {
     // URL, // QueryString like name=Cody&age=32
 }
 
-#[derive(Clone, Debug, Default, ValueEnum)]
-enum ListType {
-    #[default]
-    Collections,
-    Features,
-    Templates,
-}
-
 /// Easily manage devcontainer configuration files.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -153,8 +155,9 @@ enum Commands {
     },
     /// Overview of collections.
     List {
-        #[arg(default_value = "collections")]
-        value: ListType,
+        /// Display a given collection, including features and templates.
+        #[arg(short = 'C', long, value_name = "OCI_REF")]
+        collection_id: Option<String>,
     },
     /// Text search the `id`, `keywords`, and `description` fields of templates or features.
     Search {
@@ -230,7 +233,74 @@ fn main() -> io::Result<()> {
                 ()
             },
             Commands::Inspect { .. } => (),
-            Commands::List { .. } => (),
+            Commands::List { collection_id } => {
+                match collection_id {
+                    Some(oci_reference) => {
+                        match index.collections.iter().find(|&c| c.source_information.oci_reference == oci_reference) {
+                            Some(collection) => {
+                                let source_information = &collection.source_information;
+
+                                println!("Name:          {}", &source_information.name);
+                                println!("Maintainer:    {}", &source_information.maintainer);
+                                println!("Contact:       {}", &source_information.contact);
+                                println!("Repository:    {}", &source_information.repository);
+                                println!("OCI Reference: {}", &source_information.oci_reference);
+
+                                let search_results: Vec<SearchResult> = {
+                                    let features = collection.features.iter().map(SearchResult::from);
+                                    let templates = collection.templates.iter().map(SearchResult::from);
+                                    features.chain(templates).collect()
+                                };
+                                let data: Vec<[String; 5]> =
+                                    search_results.iter().enumerate().map(|(i, r)| {
+                                        let description =
+                                            r.description.as_ref()
+                                            .and_then(|d| d.lines().next())
+                                            .unwrap_or_default();
+                                        [
+                                            format!("{}", i + 1),
+                                            format!("{}", r.collection),
+                                            format!("{}", r.id.replace(&oci_reference, "~")),
+                                            format!("{}", r.name),
+                                            format!("{}", description),
+                                        ]
+                                    })
+                                    .collect();
+                                let mut table = ascii_table::AsciiTable::default();
+                                table.column(0).set_align(ascii_table::Align::Right);
+                                table.column(1).set_header("Type");
+                                table.column(2).set_header("OCI Reference");
+                                table.column(3).set_header("Name").set_max_width(40);
+                                table.column(4).set_header("Description").set_max_width(75);
+                                table.print(data);
+                            },
+                            None => {
+                                println!("No collection found by the given OCI Reference: {}", oci_reference);
+                            },
+                        }
+                    },
+                    None => {
+                        let mut table = ascii_table::AsciiTable::default();
+                        table.column(0).set_header("Name");
+                        table.column(1).set_header("OCI Reference");
+                        table.column(2).set_header("Features").set_align(ascii_table::Align::Right);
+                        table.column(3).set_header("Templates").set_align(ascii_table::Align::Right);
+                        let result: Vec<[String; 4]> =
+                            index.collections
+                            .iter()
+                            .map(|collection| {
+                                [
+                                    format!("{}", collection.source_information.name),
+                                    format!("{}", collection.source_information.oci_reference),
+                                    format!("{}", collection.features.len()),
+                                    format!("{}", collection.templates.len()),
+                                ]
+                            })
+                            .collect();
+                        table.print(result);
+                    },
+                }
+            },
             Commands::Search { value, collection, display_as, fields, include_deprecated } => {
                 let search_fields = fields.unwrap_or_else(|| vec![SearchFields::Id, SearchFields::Name, SearchFields::Description]);
                 let mut results: Vec<SearchResult> = Vec::new();
@@ -290,14 +360,14 @@ fn main() -> io::Result<()> {
                         table.column(1).set_header("Version");
                         table.column(2).set_header("Name");
                         // table.column(3).set_header("Description");
-                        let data: Vec<Vec<&str>> =
+                        let data: Vec<[&str; 3]> =
                             results
                             .iter()
-                            .map(|r| vec![
+                            .map(|r| [
                                 r.id.as_str(),
                                 r.version.as_str(),
                                 r.name.as_str(),
-                                // r.description.as_ref().map(|d| d.as_str()).unwrap_or("")
+                                // r.description.as_ref().and_then(|d| d.lines().next()).unwrap_or_default()
                             ])
                             .collect();
                         table.print(data);
