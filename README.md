@@ -10,6 +10,12 @@ The to see help on input flags.
 $ devconf --help
 ```
 
+All of the commands depend on a local copy of the _generated_ [collection index](https://github.com/devcontainers/devcontainers.github.io/blob/gh-pages/_data/collection-index.yml). This is downloaded by [oras](https://github.com/oras-project/oras) and saved in the system-dependant data directory.
+
+```shell
+$ devconf --pull-index
+```
+
 ### Features
 
 ...
@@ -21,6 +27,10 @@ Use to start a new project. Provide no arguments for the default interactive exp
 #### devconf inspect
 
 Describe all details of a specific template or feature. The `id` is a required argument. Use as an aid when editing an existing `devcontainer.json`.
+
+#### devconf list
+
+List collections overview. With `--collection-id` option display all features or templates for the given collection.
 
 #### devconf search
 
