@@ -113,7 +113,7 @@ enum InspectDisplay {
 
 /// Easily manage devcontainer configuration files.
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = None, arg_required_else_help = true)]
 struct Args {
     /// Pull the index of features & templates
     #[arg(short, long)]
