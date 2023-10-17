@@ -7,17 +7,18 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use clap::builder::PossibleValue;
+use serde::{Deserialize, Serialize};
 
 mod registry;
 
-#[derive(Clone, Debug, Default)]
-enum CollectionName {
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+enum CollectionCategory {
     #[default]
     Templates,
     Features,
 }
 
-impl ValueEnum for CollectionName {
+impl ValueEnum for CollectionCategory {
     fn value_variants<'a>() -> &'a [Self] {
         &[Self::Templates, Self::Features]
     }
@@ -34,8 +35,46 @@ impl ValueEnum for CollectionName {
 enum SearchFields {
     #[default]
     Id,
+    Name,
     Description,
     Keywords,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+struct SearchResult {
+    /// The search result type, here for JSON type tagging. -- Reserves the right to transform this struct into an enum later.
+    collection: CollectionCategory,
+    id: String,
+    version: String,
+    name: String,
+    description: Option<String>,
+    keywords: Option<Vec<String>>,
+}
+
+impl From<&registry::Feature> for SearchResult {
+    fn from(value: &registry::Feature) -> Self {
+        SearchResult {
+            collection: CollectionCategory::Features,
+            id: value.id.clone(),
+            version: value.version.clone(),
+            name: value.name.clone(),
+            description: value.description.clone(),
+            keywords: value.keywords.clone(),
+        }
+    }
+}
+
+impl From<&registry::Template> for SearchResult {
+    fn from(value: &registry::Template) -> Self {
+        SearchResult {
+            collection: CollectionCategory::Templates,
+            id: value.id.clone(),
+            version: value.version.clone(),
+            name: value.name.clone(),
+            description: value.description.clone(),
+            keywords: value.keywords.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, ValueEnum)]
@@ -124,7 +163,7 @@ enum Commands {
 
         /// Match which section of the index.
         #[arg(short, long, default_value = "templates")]
-        collection: CollectionName,
+        collection: CollectionCategory,
 
         /// Format for displaying the results.
         #[arg(short, long, value_name = "FORMAT", default_value = "table")]
@@ -133,6 +172,10 @@ enum Commands {
         /// Match only within the given fields.
         #[arg(short, long)]
         fields: Option<Vec<SearchFields>>,
+
+        /// Display deprecated results.
+        #[arg(long)]
+        include_deprecated: bool,
     },
 }
 
@@ -151,6 +194,11 @@ fn data_directory<P: AsRef<Path>>(namespace: P) -> io::Result<PathBuf> {
     } else {
         Err(io::Error::new(io::ErrorKind::InvalidData, "Unable to determine a valid data directory"))
     }
+}
+
+/// Take the lowercase `target` to check if it contains the lowercase `inside` value.
+fn lowercase_contains<'t>(inside: &'t String) -> impl FnOnce(&'t String,) -> bool {
+    move |target| target.to_lowercase().contains(inside.to_lowercase().as_str())
 }
 
 fn main() -> io::Result<()> {
@@ -174,7 +222,7 @@ fn main() -> io::Result<()> {
             eprintln!("Missing devcontainer-index.json.\n\n\tRun `{} --pull-index`.\n", prog_name);
         }
 
-        let _index = registry::read_devcontainer_index(index_file)?;
+        let index = registry::read_devcontainer_index(index_file)?;
 
         match command {
             Commands::Init { workspace_folder, .. } => {
@@ -183,7 +231,83 @@ fn main() -> io::Result<()> {
             },
             Commands::Inspect { .. } => (),
             Commands::List { .. } => (),
-            Commands::Search { .. } => (),
+            Commands::Search { value, collection, display_as, fields, include_deprecated } => {
+                let search_fields = fields.unwrap_or_else(|| vec![SearchFields::Id, SearchFields::Name, SearchFields::Description]);
+                let mut results: Vec<SearchResult> = Vec::new();
+
+                match collection {
+                    CollectionCategory::Features => {
+                        index.collections
+                        .iter()
+                        .flat_map(|collection| collection.features.iter())
+                        .for_each(|feature| {
+                            for field in &search_fields {
+                                let search_match = match field {
+                                    SearchFields::Id => feature.id == value,
+                                    SearchFields::Name => feature.name == value,
+                                    SearchFields::Description => feature.description.as_ref().is_some_and(lowercase_contains(&value)),
+                                    SearchFields::Keywords => feature.keywords.as_ref().is_some_and(|keywords| keywords.contains(&value)),
+                                };
+
+                                if search_match {
+                                    let result = SearchResult::from(feature);
+                                    results.push(result);
+                                    break;
+                                }
+                            }
+                        });
+                    },
+                    CollectionCategory::Templates => {
+                        index.collections
+                        .iter()
+                        // There is one known collection that is deprecated, which is marked in the "maintainer" field.
+                        .filter(|collection| include_deprecated || !collection.source_information.maintainer.to_lowercase().contains("deprecated"))
+                        .flat_map(|collection| collection.templates.iter())
+                        .for_each(|template| {
+                            for field in &search_fields {
+                                let search_match = match field {
+                                    SearchFields::Id => template.id.to_lowercase().contains(value.to_lowercase().as_str()),
+                                    SearchFields::Name => template.name.to_lowercase().contains(value.to_lowercase().as_str()),
+                                    SearchFields::Description => template.description.as_ref().is_some_and(lowercase_contains(&value)),
+                                    SearchFields::Keywords => template.keywords.as_ref().is_some_and(|keywords| keywords.contains(&value)),
+                                };
+
+                                if search_match {
+                                    let result = SearchResult::from(template);
+                                    results.push(result);
+                                    break;
+                                }
+                            }
+                        });
+                    },
+                }
+
+                match display_as {
+                    SearchDisplay::Table if results.is_empty() => println!("No results found"),
+                    SearchDisplay::Table => {
+                        let mut table = ascii_table::AsciiTable::default();
+                        table.column(0).set_header("ID");
+                        table.column(1).set_header("Version");
+                        table.column(2).set_header("Name");
+                        // table.column(3).set_header("Description");
+                        let data: Vec<Vec<&str>> =
+                            results
+                            .iter()
+                            .map(|r| vec![
+                                r.id.as_str(),
+                                r.version.as_str(),
+                                r.name.as_str(),
+                                // r.description.as_ref().map(|d| d.as_str()).unwrap_or("")
+                            ])
+                            .collect();
+                        table.print(data);
+                    },
+                    SearchDisplay::Json => {
+                        let json = serde_json::to_string(&results)?;
+                        println!("{}", json);
+                    },
+                }
+            },
         };
     }
 
