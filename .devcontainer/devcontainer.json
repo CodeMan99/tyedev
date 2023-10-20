@@ -36,6 +36,10 @@
 	"features": {
 		"ghcr.io/devcontainers/features/git:1": {},
 		"ghcr.io/devcontainers/features/github-cli:1": {},
-		"ghcr.io/dhoeric/features/oras:1": {}
+		"ghcr.io/dhoeric/features/oras:1": {},
+		"ghcr.io/lee-orr/rusty-dev-containers/bacon:0": {},
+		"ghcr.io/lee-orr/rusty-dev-containers/cargo-binstall:0": {},
+		"ghcr.io/lee-orr/rusty-dev-containers/cargo-watch:0": {}
+		// "ghcr.io/lee-orr/rusty-dev-containers/sscache:0": {}
 	}
 }
