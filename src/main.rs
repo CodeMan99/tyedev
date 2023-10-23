@@ -137,6 +137,10 @@ enum Commands {
         #[arg(short = 's', long)]
         attempt_single_file: bool,
 
+        /// Strip comments from the generated devcontainer.json.
+        #[arg(short, long)]
+        remove_comments: bool,
+
         /// Reference to a Template in a supported OCI registry.
         #[arg(short, long, value_name = "OCI_REF")]
         template_id: Option<String>,
