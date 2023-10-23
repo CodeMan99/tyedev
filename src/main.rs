@@ -206,8 +206,9 @@ fn data_directory<P: AsRef<Path>>(namespace: P) -> io::Result<PathBuf> {
 }
 
 /// Take the lowercase `target` to check if it contains the lowercase `inside` value.
-fn lowercase_contains<'t>(inside: &'t String) -> impl FnOnce(&'t String,) -> bool {
-    move |target| target.to_lowercase().contains(inside.to_lowercase().as_str())
+fn lowercase_contains(inside: &str) -> impl FnOnce(&String,) -> bool {
+    let inside_lowercase = inside.to_lowercase();
+    move |target| target.to_lowercase().contains(inside_lowercase.as_str())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
