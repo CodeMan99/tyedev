@@ -1,10 +1,12 @@
 use std::fs::File;
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Write};
 use std::collections::HashMap;
 use std::path::Path;
-use std::process::Command;
-use serde::{Deserialize, Serialize};
+
+use oci_spec::image::MediaType;
+use ocipkg::{Digest, ImageName, distribution};
 use serde_json::Value as JsonValue;
+use serde::{Deserialize, Serialize};
 
 // PartialOrd, Hash, Eq, Ord
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
@@ -163,19 +165,23 @@ pub struct DevcontainerIndex {
     pub collections: Vec<Collection>,
 }
 
-/// Execute the `oras` binary to pull "ghcr.io/devcontainers/index:latest" which will output "devcontainer-index.json".
-pub fn pull_devcontainer_index<P: AsRef<Path>>(current_dir: P) -> Result<(), Error> {
-    Command::new("oras")
-    .args(["pull", "ghcr.io/devcontainers/index:latest"])
-    .current_dir(current_dir)
-    .status()
-    .and_then(|exit_status| {
-        if exit_status.success() {
-            Ok(())
-        } else {
-            Err(Error::new(ErrorKind::Interrupted, "Non-zero exit code received from `oras` subprocess."))
+/// Pull OCI Artifact "ghcr.io/devcontainers/index:latest" and download the JSON layer to the given filename.
+pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<(), Box<dyn std::error::Error>> {
+    let image_name = ImageName::parse("ghcr.io/devcontainers/index:latest")?;
+    let mut client = distribution::Client::try_from(&image_name)?;
+    let layer = distribution::get_image_layer(&mut client, &image_name, |media_type| {
+        match media_type {
+            MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.index.layer.v1+json",
+            _ => false,
         }
-    })
+    })?;
+    let digest = Digest::new(layer.digest())?;
+    let blob = client.get_blob(&digest)?;
+    let mut file = File::create(filename)?;
+
+    file.write_all(&blob[..])?;
+
+    Ok(())
 }
 
 /// Read and parse the given filename.

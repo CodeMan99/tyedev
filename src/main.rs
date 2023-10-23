@@ -1,10 +1,12 @@
 use std::env;
+use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
 use std::fmt;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
+use std::result::Result;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use clap::builder::PossibleValue;
@@ -204,22 +206,22 @@ fn lowercase_contains<'t>(inside: &'t String) -> impl FnOnce(&'t String,) -> boo
     move |target| target.to_lowercase().contains(inside.to_lowercase().as_str())
 }
 
-fn main() -> io::Result<()> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
     let prog_name = program_name()?;
     let data_dir = data_directory(&prog_name)?;
+    let index_file = data_dir.join("devcontainer-index.json");
 
     if args.pull_index {
         if !data_dir.exists() {
             fs::create_dir_all(&data_dir)?;
         }
 
-        registry::pull_devcontainer_index(&data_dir)?;
+        registry::pull_devcontainer_index(&index_file)?;
+        println!("Saved to {}", index_file.display());
     }
 
     if let Some(command) = args.command {
-        let index_file = data_dir.join("devcontainer-index.json");
-
         if !index_file.exists() {
             // suggested user action
             eprintln!("Missing devcontainer-index.json.\n\n\tRun `{} --pull-index`.\n", prog_name);

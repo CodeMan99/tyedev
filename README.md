@@ -10,7 +10,7 @@ The to see help on input flags.
 $ devconf --help
 ```
 
-All of the commands depend on a local copy of the _generated_ [collection index](https://github.com/devcontainers/devcontainers.github.io/blob/gh-pages/_data/collection-index.yml). This is downloaded by [oras](https://github.com/oras-project/oras) and saved in the system-dependant data directory.
+All of the commands depend on a local copy of the _generated_ [collection index](https://github.com/devcontainers/devcontainers.github.io/blob/gh-pages/_data/collection-index.yml).
 
 ```shell
 $ devconf --pull-index
