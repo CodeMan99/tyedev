@@ -194,7 +194,7 @@ fn program_name() -> io::Result<String> {
     .file_name()
     .and_then(OsStr::to_str)
     .map(String::from)
-    .ok_or(io::Error::new(io::ErrorKind::Other, "Executable not a file path"))
+    .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Executable not a file path"))
 }
 
 fn data_directory<P: AsRef<Path>>(namespace: P) -> io::Result<PathBuf> {
