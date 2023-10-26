@@ -24,6 +24,8 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
+				"bierner.github-markdown-preview",
+				"DavidAnson.vscode-markdownlint",
 				"GitHub.vscode-github-actions"
 			]
 		}
