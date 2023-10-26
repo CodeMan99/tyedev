@@ -184,6 +184,36 @@ pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<(), Box<dy
     Ok(())
 }
 
+pub fn pull_template<P: AsRef<Path>>(folder: P, image_name: &ImageName) -> Result<(), Box<dyn std::error::Error>> {
+    let mut client = distribution::Client::try_from(image_name)?;
+    let layer = distribution::get_image_layer(&mut client, &image_name, |media_type| {
+        match media_type {
+            MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.layer.v1+tar",
+            _ => false,
+        }
+    })?;
+    // let filename =
+    //     layer.annotations()
+    //     .to_owned()
+    //     .and_then(|annotations| annotations.get("org.opencontainers.image.title").map(|title| title.to_owned()))
+    //     .unwrap_or_else(|| String::from("template.tar"));
+    let digest = Digest::new(layer.digest())?;
+    let blob = client.get_blob(&digest)?;
+    let mut archive = tar::Archive::new(blob.as_slice());
+
+    // TODO determine what files are actually needed.
+    archive.unpack(folder)?;
+
+    Ok(())
+}
+
+#[test]
+fn test_pull_template() -> Result<(), Box<dyn std::error::Error>> {
+    let image_name = ImageName::parse("ghcr.io/devcontainers/templates/go:latest")?;
+    pull_template("/tmp/devcontainers-test/templates/go", &image_name)?;
+    Ok(())
+}
+
 /// Read and parse the given filename.
 pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<DevcontainerIndex, Error> {
     let file = File::open(filename)?;
