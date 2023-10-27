@@ -89,6 +89,34 @@ impl Default for DevOption {
     }
 }
 
+impl DevOption {
+    pub fn configured_default(&self) -> String {
+        match self {
+            DevOption::Boolean { default, .. } => {
+                match default {
+                    BooleanDefaultType::String(s) => s.clone(),
+                    BooleanDefaultType::Boolean(b) => format!("{}", b),
+                }
+            },
+            DevOption::String(StringDevOption::Proposals { default, proposals, .. }) => {
+                // Reminder that `default` is not actually optional. This is just covering mistakes from collection maintainers.
+                default.clone()
+                .or_else(||
+                    proposals.as_ref()
+                    .and_then(|p|
+                        p.first()
+                        .map(|s| s.clone())
+                    )
+                )
+                .unwrap_or_default()
+            },
+            DevOption::String(StringDevOption::EnumValues { default, .. }) => {
+                default.clone()
+            },
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Feature {
