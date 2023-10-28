@@ -12,7 +12,10 @@ use clap::{Parser, Subcommand, ValueEnum};
 use clap::builder::PossibleValue;
 use serde::{Deserialize, Serialize};
 
+mod configuration;
 mod registry;
+
+use configuration::DisplayPrompt;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 enum CollectionCategory {
@@ -237,7 +240,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         match command {
             Commands::Init { workspace_folder, .. } => {
                 let _workspace = workspace_folder.map_or_else(env::current_dir, Ok)?;
-                ()
+                let name = "completions";
+                let dev_option = registry::DevOption::default();
+                let template_option = configuration::DevOptionPrompt::new(name, &dev_option);
+                let value = template_option.display_prompt()?;
+
+                println!("{}", value);
             },
             Commands::Inspect { .. } => (),
             Commands::List { collection_id } => {
