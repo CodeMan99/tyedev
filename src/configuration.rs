@@ -44,10 +44,17 @@ impl Autocomplete for ProposalsAutocomplete {
 
     fn get_completion(
         &mut self,
-        _input: &str,
+        input: &str,
         highlighted_suggestion: Option<String>,
     ) -> Result<Replacement, CustomUserError> {
-        Ok(highlighted_suggestion)
+        Ok(highlighted_suggestion.or_else(|| {
+            let suggestions = self.get_suggestions(input).ok()?;
+            if let [suggestion] = suggestions.as_slice() {
+                Some(suggestion.clone())
+            } else {
+                None
+            }
+        }))
     }
 }
 
