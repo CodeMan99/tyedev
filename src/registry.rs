@@ -58,15 +58,15 @@ pub enum BooleanDefaultType {
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum StringDevOption {
-    Proposals {
-        default: Option<String>, // this field is actually required, but there are violations out there that need to be loaded.
-        description: Option<String>,
-        proposals: Option<Vec<String>>,
-    },
     EnumValues {
         default: String,
         description: Option<String>,
         r#enum: Vec<String>,
+    },
+    Proposals {
+        default: Option<String>, // this field is actually required, but there are violations out there that need to be loaded.
+        description: Option<String>,
+        proposals: Option<Vec<String>>,
     },
 }
 
