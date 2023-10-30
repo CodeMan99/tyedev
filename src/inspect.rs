@@ -23,4 +23,4 @@ pub struct InspectArgs {
     display_as: InspectDisplay,
 }
 
-pub fn inspect(InspectArgs { .. }: InspectArgs) -> () {}
+pub fn inspect(InspectArgs { .. }: InspectArgs) {}

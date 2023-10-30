@@ -17,8 +17,8 @@ pub enum CollectionCategory {
 impl fmt::Display for CollectionCategory {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Features => write!(f, "{}", "feature"),
-            Self::Templates => write!(f, "{}", "template"),
+            Self::Features => write!(f, "feature"),
+            Self::Templates => write!(f, "template"),
         }
     }
 }

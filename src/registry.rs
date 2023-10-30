@@ -103,10 +103,7 @@ impl DevOption {
                 default.clone()
                 .or_else(||
                     proposals.as_ref()
-                    .and_then(|p|
-                        p.first()
-                        .map(|s| s.clone())
-                    )
+                    .and_then(|p| p.first().cloned())
                 )
                 .unwrap_or_default()
             },
@@ -214,7 +211,7 @@ pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<(), Box<dy
 
 pub fn pull_template<P: AsRef<Path>>(folder: P, image_name: &ImageName) -> Result<(), Box<dyn std::error::Error>> {
     let mut client = distribution::Client::try_from(image_name)?;
-    let layer = distribution::get_image_layer(&mut client, &image_name, |media_type| {
+    let layer = distribution::get_image_layer(&mut client, image_name, |media_type| {
         match media_type {
             MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.layer.v1+tar",
             _ => false,

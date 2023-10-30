@@ -11,7 +11,7 @@ pub struct ListArgs {
     collection_id: Option<String>,
 }
 
-fn collection_templates_and_features(oci_reference: &str, collection: &Collection) -> () {
+fn collection_templates_and_features(oci_reference: &str, collection: &Collection) {
     let source_information = &collection.source_information;
 
     println!("Name:          {}", &source_information.name);
@@ -34,9 +34,9 @@ fn collection_templates_and_features(oci_reference: &str, collection: &Collectio
             [
                 format!("{}", i + 1),
                 format!("{}", r.collection),
-                format!("{}", r.id.replace(oci_reference, "~")),
-                format!("{}", r.name),
-                format!("{}", description),
+                r.id.replace(oci_reference, "~"),
+                r.name.to_string(),
+                description.to_string(),
             ]
         })
         .collect();
@@ -51,7 +51,7 @@ fn collection_templates_and_features(oci_reference: &str, collection: &Collectio
     table.print(data);
 }
 
-fn overview_collections(index: &DevcontainerIndex) -> () {
+fn overview_collections(index: &DevcontainerIndex) {
     let mut table = AsciiTable::default();
 
     table.column(0).set_header("Name");
@@ -63,8 +63,8 @@ fn overview_collections(index: &DevcontainerIndex) -> () {
         index.collections
         .iter()
         .map(|collection| [
-            format!("{}", collection.source_information.name),
-            format!("{}", collection.source_information.oci_reference),
+            collection.source_information.name.to_string(),
+            collection.source_information.oci_reference.to_string(),
             format!("{}", collection.features.len()),
             format!("{}", collection.templates.len()),
         ])
@@ -73,7 +73,7 @@ fn overview_collections(index: &DevcontainerIndex) -> () {
     table.print(result);
 }
 
-pub fn list(index: &DevcontainerIndex, ListArgs { collection_id }: ListArgs) -> () {
+pub fn list(index: &DevcontainerIndex, ListArgs { collection_id }: ListArgs) {
     match collection_id {
         Some(oci_reference) => {
             match index.collections.iter().find(|&c| c.source_information.oci_reference == oci_reference) {
