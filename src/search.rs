@@ -122,7 +122,16 @@ fn lowercase_contains(inside: &str) -> impl FnOnce(&String,) -> bool {
     move |target| target.to_lowercase().contains(inside_lowercase.as_str())
 }
 
-pub fn search(index: &registry::DevcontainerIndex, SearchArgs { value, collection, display_as, fields, include_deprecated }: SearchArgs) -> Result<(), Box<dyn Error>> {
+pub fn search(
+    index: &registry::DevcontainerIndex,
+    SearchArgs {
+        value,
+        collection,
+        display_as,
+        fields,
+        include_deprecated,
+    }: SearchArgs
+) -> Result<(), Box<dyn Error>> {
     let search_fields = fields.unwrap_or_else(|| vec![SearchFields::Id, SearchFields::Name, SearchFields::Description]);
     let mut results: Vec<SearchResult> = Vec::new();
 

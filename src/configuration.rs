@@ -14,7 +14,7 @@ use std::str::FromStr;
 
 use inquire::{Autocomplete, CustomUserError, Confirm, Select, Text, autocompletion::Replacement};
 
-use crate::registry::*;
+use crate::registry::{DevOption, StringDevOption};
 
 #[derive(Clone, Debug, PartialEq, Default)]
 struct ProposalsAutocomplete(Vec<String>);

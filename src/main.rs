@@ -80,8 +80,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         let index = registry::read_devcontainer_index(index_file)?;
 
         match command {
-            Commands::Init (args) => init::init(args)?,
-            Commands::Inspect (args) => inspect::inspect(args),
+            Commands::Init (args) => init::init(&index, args)?,
+            Commands::Inspect (args) => inspect::inspect(&index, args),
             Commands::List (args) => list::list(&index, args),
             Commands::Search (args) => search::search(&index, args)?,
         };

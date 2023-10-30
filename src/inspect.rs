@@ -1,5 +1,7 @@
 use clap::{Args, ValueEnum};
 
+use crate::registry;
+
 #[derive(Clone, Debug, Default, ValueEnum)]
 pub enum InspectDisplay {
     #[default]
@@ -23,4 +25,9 @@ pub struct InspectArgs {
     display_as: InspectDisplay,
 }
 
-pub fn inspect(InspectArgs { .. }: InspectArgs) {}
+pub fn inspect(
+    _index: &registry::DevcontainerIndex,
+    InspectArgs { .. }: InspectArgs
+) {
+    
+}

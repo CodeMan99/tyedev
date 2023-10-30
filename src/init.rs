@@ -32,7 +32,10 @@ pub struct InitArgs {
     workspace_folder: Option<PathBuf>,
 }
 
-pub fn init(InitArgs { workspace_folder, .. }: InitArgs) -> Result<(), Box<dyn Error>> {
+pub fn init(
+    _index: &registry::DevcontainerIndex,
+    InitArgs { workspace_folder, .. }: InitArgs
+) -> Result<(), Box<dyn Error>> {
     let _workspace = workspace_folder.map_or_else(env::current_dir, Ok)?;
     let name = "completions";
     let dev_option = registry::DevOption::default();
