@@ -60,7 +60,7 @@ fn overview_collections(index: &DevcontainerIndex) {
     table.column(3).set_header("Templates").set_align(Align::Right);
 
     let result: Vec<[String; 4]> =
-        index.collections
+        index.collections()
         .iter()
         .map(|collection| [
             collection.source_information.name.to_string(),

@@ -128,9 +128,7 @@ pub fn search(index: &registry::DevcontainerIndex, SearchArgs { value, collectio
 
     match collection {
         CollectionCategory::Features => {
-            index.collections
-            .iter()
-            .flat_map(|collection| collection.features.iter())
+            index.iter_features()
             .for_each(|feature| {
                 for field in &search_fields {
                     let search_match = match field {
@@ -149,11 +147,7 @@ pub fn search(index: &registry::DevcontainerIndex, SearchArgs { value, collectio
             });
         },
         CollectionCategory::Templates => {
-            index.collections
-            .iter()
-            // There is one known collection that is deprecated, which is marked in the "maintainer" field.
-            .filter(|collection| include_deprecated || !collection.source_information.maintainer.to_lowercase().contains("deprecated"))
-            .flat_map(|collection| collection.templates.iter())
+            index.iter_templates(include_deprecated)
             .for_each(|template| {
                 for field in &search_fields {
                     let search_match = match field {

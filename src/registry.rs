@@ -187,14 +187,32 @@ pub struct Collection {
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct DevcontainerIndex {
-    pub collections: Vec<Collection>,
+    collections: Vec<Collection>,
 }
 
 impl DevcontainerIndex {
+    pub fn collections(&self) -> &[Collection] {
+        self.collections.as_slice()
+    }
+
     pub fn get_collection(&self, oci_reference: &str) -> Option<&Collection> {
         self.collections
         .iter()
         .find(|&collection| collection.source_information.oci_reference == oci_reference)
+    }
+
+    pub fn iter_features(&self) -> impl Iterator<Item = &Feature> {
+        self.collections
+        .iter()
+        .flat_map(|collection| collection.features.iter())
+    }
+
+    pub fn iter_templates(&self, include_deprecated: bool) -> impl Iterator<Item = &Template> {
+        self.collections
+        .iter()
+        // There is one known collection that is deprecated, which is marked in the "maintainer" field.
+        .filter(move |&collection| include_deprecated || !collection.source_information.maintainer.to_lowercase().contains("deprecated"))
+        .flat_map(|collection| collection.templates.iter())
     }
 }
 
