@@ -5,17 +5,15 @@ use std::fs;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
-use std::result::Result;
 
 use clap::{Parser, Subcommand};
 
 mod configuration;
+mod init;
 mod inspect;
 mod list;
 mod registry;
 mod search;
-
-use configuration::DisplayPrompt;
 
 /// Easily manage devcontainer configuration files.
 #[derive(Parser, Debug)]
@@ -32,27 +30,7 @@ struct Args {
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Create new devcontainer.
-    Init {
-        /// Avoid interactive prompts.
-        #[arg(short, long)]
-        non_interactive: bool,
-
-        /// Write to ".devcontainer.json" when using an `image` type template.
-        #[arg(short = 's', long)]
-        attempt_single_file: bool,
-
-        /// Strip comments from the generated devcontainer.json.
-        #[arg(short, long)]
-        remove_comments: bool,
-
-        /// Reference to a Template in a supported OCI registry.
-        #[arg(short, long, value_name = "OCI_REF")]
-        template_id: Option<String>,
-
-        /// Target workspace for the devcontainer configuration.
-        #[arg(short, long, value_name = "DIRECTORY")]
-        workspace_folder: Option<PathBuf>,
-    },
+    Init (init::InitArgs),
     /// Display details of a specific template or feature.
     Inspect (inspect::InspectArgs),
     /// Overview of collections.
@@ -106,15 +84,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let index = registry::read_devcontainer_index(index_file)?;
 
         match command {
-            Commands::Init { workspace_folder, .. } => {
-                let _workspace = workspace_folder.map_or_else(env::current_dir, Ok)?;
-                let name = "completions";
-                let dev_option = registry::DevOption::default();
-                let template_option = configuration::DevOptionPrompt::new(name, &dev_option);
-                let value = template_option.display_prompt()?;
-
-                println!("{}", value);
-            },
+            Commands::Init (args) => init::init(args)?,
             Commands::Inspect (args) => inspect::inspect(args),
             Commands::List { collection_id } => {
                 match collection_id {
