@@ -190,6 +190,14 @@ pub struct DevcontainerIndex {
     pub collections: Vec<Collection>,
 }
 
+impl DevcontainerIndex {
+    pub fn get_collection(&self, oci_reference: &str) -> Option<&Collection> {
+        self.collections
+        .iter()
+        .find(|&collection| collection.source_information.oci_reference == oci_reference)
+    }
+}
+
 /// Pull OCI Artifact "ghcr.io/devcontainers/index:latest" and download the JSON layer to the given filename.
 pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<(), Box<dyn std::error::Error>> {
     let image_name = ImageName::parse("ghcr.io/devcontainers/index:latest")?;
