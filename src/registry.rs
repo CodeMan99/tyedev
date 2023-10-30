@@ -235,13 +235,6 @@ pub fn pull_template<P: AsRef<Path>>(folder: P, image_name: &ImageName) -> Resul
     Ok(())
 }
 
-#[test]
-fn test_pull_template() -> Result<(), Box<dyn std::error::Error>> {
-    let image_name = ImageName::parse("ghcr.io/devcontainers/templates/go:latest")?;
-    pull_template("/tmp/devcontainers-test/templates/go", &image_name)?;
-    Ok(())
-}
-
 /// Read and parse the given filename.
 pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<DevcontainerIndex, Error> {
     let file = File::open(filename)?;
@@ -275,4 +268,23 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
         )?;
 
     Ok(DevcontainerIndex { collections })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pull_template() -> Result<(), Box<dyn std::error::Error>> {
+        let tmpdir = tempfile::tempdir()?;
+        let inner = |folder| {
+            let image_name = ImageName::parse("ghcr.io/devcontainers/templates/go:latest")?;
+            pull_template(folder, &image_name)
+        };
+        let result = inner(&tmpdir);
+
+        std::fs::remove_dir_all(tmpdir)?;
+
+        result
+    }
 }
