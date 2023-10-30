@@ -1,9 +1,17 @@
 use ascii_table::{Align, AsciiTable};
+use clap::Args;
 
 use crate::registry::{Collection, DevcontainerIndex};
 use crate::search;
 
-pub fn collection_templates_and_features(oci_reference: &str, collection: &Collection) -> () {
+#[derive(Debug, Args)]
+pub struct ListArgs {
+    /// Display a given collection, including features and templates.
+    #[arg(short = 'C', long, value_name = "OCI_REF")]
+    collection_id: Option<String>,
+}
+
+fn collection_templates_and_features(oci_reference: &str, collection: &Collection) -> () {
     let source_information = &collection.source_information;
 
     println!("Name:          {}", &source_information.name);
@@ -43,7 +51,7 @@ pub fn collection_templates_and_features(oci_reference: &str, collection: &Colle
     table.print(data);
 }
 
-pub fn overview_collections(index: &DevcontainerIndex) -> () {
+fn overview_collections(index: &DevcontainerIndex) -> () {
     let mut table = AsciiTable::default();
 
     table.column(0).set_header("Name");
@@ -63,4 +71,16 @@ pub fn overview_collections(index: &DevcontainerIndex) -> () {
         .collect();
 
     table.print(result);
+}
+
+pub fn list(index: &DevcontainerIndex, ListArgs { collection_id }: ListArgs) -> () {
+    match collection_id {
+        Some(oci_reference) => {
+            match index.collections.iter().find(|&c| c.source_information.oci_reference == oci_reference) {
+                Some(collection) => collection_templates_and_features(&oci_reference, collection),
+                None => println!("No collection found by the given OCI Reference: {}", oci_reference),
+            }
+        },
+        None => overview_collections(index),
+    }
 }

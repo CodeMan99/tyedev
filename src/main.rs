@@ -34,11 +34,7 @@ enum Commands {
     /// Display details of a specific template or feature.
     Inspect (inspect::InspectArgs),
     /// Overview of collections.
-    List {
-        /// Display a given collection, including features and templates.
-        #[arg(short = 'C', long, value_name = "OCI_REF")]
-        collection_id: Option<String>,
-    },
+    List (list::ListArgs),
     /// Text search the `id`, `keywords`, and `description` fields of templates or features.
     Search (search::SearchArgs),
 }
@@ -86,21 +82,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         match command {
             Commands::Init (args) => init::init(args)?,
             Commands::Inspect (args) => inspect::inspect(args),
-            Commands::List { collection_id } => {
-                match collection_id {
-                    Some(oci_reference) => {
-                        match index.collections.iter().find(|&c| c.source_information.oci_reference == oci_reference) {
-                            Some(collection) => {
-                                list::collection_templates_and_features(&oci_reference, collection);
-                            },
-                            None => {
-                                println!("No collection found by the given OCI Reference: {}", oci_reference);
-                            },
-                        }
-                    },
-                    None => list::overview_collections(&index),
-                }
-            },
+            Commands::List (args) => list::list(&index, args),
             Commands::Search (args) => search::search(&index, args)?,
         };
     }
