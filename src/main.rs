@@ -7,26 +7,15 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::result::Result;
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand};
 
 mod configuration;
+mod inspect;
 mod list;
 mod registry;
 mod search;
 
 use configuration::DisplayPrompt;
-
-#[derive(Clone, Debug, Default, ValueEnum)]
-enum InspectDisplay {
-    #[default]
-    Table,
-    Json,
-    // Csv,
-    // Yaml,
-    // Toml,
-    // SExpressions,
-    // URL, // QueryString like name=Cody&age=32
-}
 
 /// Easily manage devcontainer configuration files.
 #[derive(Parser, Debug)]
@@ -65,15 +54,7 @@ enum Commands {
         workspace_folder: Option<PathBuf>,
     },
     /// Display details of a specific template or feature.
-    Inspect {
-        /// The `id` to inspect.
-        #[arg(value_name = "OCI_REF")]
-        id: String,
-
-        /// Format for displaying the results.
-        #[arg(short, long, value_name = "FORMAT", default_value = "table")]
-        display_as: InspectDisplay,
-    },
+    Inspect (inspect::InspectArgs),
     /// Overview of collections.
     List {
         /// Display a given collection, including features and templates.
@@ -134,7 +115,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 println!("{}", value);
             },
-            Commands::Inspect { .. } => (),
+            Commands::Inspect (args) => inspect::inspect(args),
             Commands::List { collection_id } => {
                 match collection_id {
                     Some(oci_reference) => {
