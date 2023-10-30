@@ -122,10 +122,40 @@ fn lowercase_contains(inside: &str) -> impl FnOnce(&String,) -> bool {
     move |target| target.to_lowercase().contains(inside_lowercase.as_str())
 }
 
+trait SearchMatcher {
+    fn is_match(&self, field: &SearchFields, value: &String) -> bool;
+}
+
+impl SearchMatcher for registry::Feature {
+    fn is_match(&self, field: &SearchFields, value: &String) -> bool {
+        match field {
+            SearchFields::Id => self.id == value.as_str(),
+            SearchFields::Name => self.name == value.as_str(),
+            SearchFields::Description => self.description.as_ref().is_some_and(lowercase_contains(value)),
+            SearchFields::Keywords => self.keywords.as_ref().is_some_and(|keywords| keywords.contains(value)),
+        }
+    }
+}
+
+impl SearchMatcher for registry::Template {
+    fn is_match(&self, field: &SearchFields, value: &String) -> bool {
+        match field {
+            SearchFields::Id => self.id.to_lowercase().contains(value.to_lowercase().as_str()),
+            SearchFields::Name => self.name.to_lowercase().contains(value.to_lowercase().as_str()),
+            SearchFields::Description => self.description.as_ref().is_some_and(lowercase_contains(value)),
+            SearchFields::Keywords => self.keywords.as_ref().is_some_and(|keywords| keywords.contains(value)),
+        }
+    }
+}
+
+fn search_match<T: SearchMatcher>(value: &T, text: &String, search_fields: &[SearchFields]) -> bool {
+    search_fields.iter().find(|&field| value.is_match(field, text)).is_some()
+}
+
 pub fn search(
     index: &registry::DevcontainerIndex,
     SearchArgs {
-        value,
+        value: text,
         collection,
         display_as,
         fields,
@@ -133,48 +163,26 @@ pub fn search(
     }: SearchArgs
 ) -> Result<(), Box<dyn Error>> {
     let search_fields = fields.unwrap_or_else(|| vec![SearchFields::Id, SearchFields::Name, SearchFields::Description]);
-    let mut results: Vec<SearchResult> = Vec::new();
-
-    match collection {
+    let results: Vec<SearchResult> = match collection {
         CollectionCategory::Features => {
             index.iter_features()
-            .for_each(|feature| {
-                for field in &search_fields {
-                    let search_match = match field {
-                        SearchFields::Id => feature.id == value,
-                        SearchFields::Name => feature.name == value,
-                        SearchFields::Description => feature.description.as_ref().is_some_and(lowercase_contains(&value)),
-                        SearchFields::Keywords => feature.keywords.as_ref().is_some_and(|keywords| keywords.contains(&value)),
-                    };
-
-                    if search_match {
-                        let result = SearchResult::from(feature);
-                        results.push(result);
-                        break;
-                    }
-                }
-            });
+            .filter_map(|feature| if search_match(feature, &text, &search_fields) {
+                Some(SearchResult::from(feature))
+            } else {
+                None
+            })
+            .collect()
         },
         CollectionCategory::Templates => {
             index.iter_templates(include_deprecated)
-            .for_each(|template| {
-                for field in &search_fields {
-                    let search_match = match field {
-                        SearchFields::Id => template.id.to_lowercase().contains(value.to_lowercase().as_str()),
-                        SearchFields::Name => template.name.to_lowercase().contains(value.to_lowercase().as_str()),
-                        SearchFields::Description => template.description.as_ref().is_some_and(lowercase_contains(&value)),
-                        SearchFields::Keywords => template.keywords.as_ref().is_some_and(|keywords| keywords.contains(&value)),
-                    };
-
-                    if search_match {
-                        let result = SearchResult::from(template);
-                        results.push(result);
-                        break;
-                    }
-                }
-            });
+            .filter_map(|template| if search_match(template, &text, &search_fields) {
+                Some(SearchResult::from(template))
+            } else {
+                None
+            })
+            .collect()
         },
-    }
+    };
 
     match display_as {
         SearchDisplay::Table if results.is_empty() => println!("No results found"),
