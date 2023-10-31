@@ -299,12 +299,9 @@ mod tests {
 
     #[test]
     fn test_pull_template() -> Result<(), Box<dyn std::error::Error>> {
+        let image_name = ImageName::parse("ghcr.io/devcontainers/templates/go:latest")?;
         let tmpdir = tempfile::tempdir()?;
-        let inner = |folder| {
-            let image_name = ImageName::parse("ghcr.io/devcontainers/templates/go:latest")?;
-            pull_template(folder, &image_name)
-        };
-        let result = inner(&tmpdir);
+        let result = pull_template(&tmpdir, &image_name);
 
         std::fs::remove_dir_all(tmpdir)?;
 
