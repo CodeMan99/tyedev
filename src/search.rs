@@ -108,7 +108,7 @@ pub struct SearchArgs {
     display_as: SearchDisplay,
 
     /// Match only within the given fields.
-    #[arg(short, long)]
+    #[arg(short, long, value_name = "FIELD")]
     fields: Option<Vec<SearchFields>>,
 
     /// Display deprecated results.
