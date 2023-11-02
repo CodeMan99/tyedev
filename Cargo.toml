@@ -7,6 +7,7 @@ edition = "2021"
 ascii_table = { version = "4.0.3", features = ["auto_table_width"] }
 clap = { version = "4.4.6", features = ["derive"] }
 dirs = "5.0.1"
+human_format = "1.0.3"
 inquire = { version = "0.6.2", features = ["editor"] }
 oci-spec = "0.6.4"
 ocipkg = { git = "https://github.com/CodeMan99/ocipkg", branch = "feat/get-image-layer", version = "0.2.8" }

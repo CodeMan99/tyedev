@@ -31,7 +31,7 @@ struct Args {
 enum Commands {
     /// Create new devcontainer.
     Init (init::InitArgs),
-    /// Display details of a specific template or feature.
+    /// Display details of a specific feature, template, or collection.
     Inspect (inspect::InspectArgs),
     /// Overview of collections.
     List (list::ListArgs),
@@ -81,7 +81,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         match command {
             Commands::Init (args) => init::init(&index, args)?,
-            Commands::Inspect (args) => inspect::inspect(&index, args),
+            Commands::Inspect (args) => inspect::inspect(&index, args)?,
             Commands::List (args) => list::list(&index, args),
             Commands::Search (args) => search::search(&index, args)?,
         };

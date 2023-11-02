@@ -1,3 +1,4 @@
+use std::fmt::{self, Display};
 use std::fs::File;
 use std::io::{Error, ErrorKind, Write};
 use std::collections::HashMap;
@@ -17,11 +18,26 @@ pub enum DockerMountType {
     Volume,
 }
 
+impl Display for DockerMountType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DockerMountType::Bind => write!(f, "bind"),
+            DockerMountType::Volume => write!(f, "volume"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct DockerMount {
     pub source: String,
     pub target: String,
     pub r#type: DockerMountType,
+}
+
+impl Display for DockerMount {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "source={}, target={}, type={}", self.source, self.target, self.r#type)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
@@ -35,6 +51,30 @@ pub enum LifecycleHook {
 impl Default for LifecycleHook {
     fn default() -> Self {
         LifecycleHook::Single(String::new())
+    }
+}
+
+impl Display for LifecycleHook {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LifecycleHook::Single(value) => write!(f, "{value}"),
+            LifecycleHook::Multiple(values) => write!(f, "{}", values.join(", ")),
+            LifecycleHook::Named(values) => {
+                values.iter()
+                .enumerate()
+                .fold(Ok(()), |r, (index, (key, value))| {
+                    r.and_then(|_| {
+                        let join = if index == 0 { "" } else { "; " };
+                        match value.as_ref() {
+                            LifecycleHook::Single(v) => write!(f, "{join}{key}={v}"),
+                            LifecycleHook::Multiple(vs) => write!(f, "{join}{key}={}", vs.join(", ")),
+                            // Only a single level of nesting makes sense.
+                            LifecycleHook::Named(_) => Err(fmt::Error),
+                        }
+                    })
+                })
+            },
+        }
     }
 }
 
@@ -55,6 +95,15 @@ pub enum BooleanDefaultType {
     Boolean(bool),
 }
 
+impl Display for BooleanDefaultType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BooleanDefaultType::String(value) => write!(f, "{value}"),
+            BooleanDefaultType::Boolean(value) => write!(f, "{value}"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum StringDevOption {
@@ -70,6 +119,39 @@ pub enum StringDevOption {
     },
 }
 
+impl Display for StringDevOption {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            StringDevOption::EnumValues { default, description, r#enum } => {
+                write!(
+                    f,
+                    "type=string, default={}, enum=[{}], description={}",
+                    default,
+                    r#enum.join(", "),
+                    description.as_ref().cloned().unwrap_or_default(),
+                )
+            },
+            StringDevOption::Proposals { default, description, proposals: Some(proposals) } => {
+                write!(
+                    f,
+                    "type=string, default={}, proposals=[{}], description={}",
+                    default.as_ref().cloned().unwrap_or_default(),
+                    proposals.join(", "),
+                    description.as_ref().cloned().unwrap_or_default(),
+                )
+            },
+            StringDevOption::Proposals { default, description, proposals: None } => {
+                write!(
+                    f,
+                    "type=string, default={}, description={}",
+                    default.as_ref().cloned().unwrap_or_default(),
+                    description.as_ref().cloned().unwrap_or_default(),
+                )
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum DevOption {
@@ -78,6 +160,17 @@ pub enum DevOption {
         description: Option<String>,
     },
     String (StringDevOption),
+}
+
+impl Display for DevOption {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DevOption::Boolean { default, description } => {
+                write!(f, "type=boolean, default={default}, description={}", description.as_ref().cloned().unwrap_or_default())
+            },
+            DevOption::String (option) => write!(f, "{option}"),
+        }
+    }
 }
 
 impl Default for DevOption {
@@ -156,6 +249,16 @@ pub enum TemplateType {
     DockerCompose,
 }
 
+impl Display for TemplateType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TemplateType::Image => write!(f, "image"),
+            TemplateType::Dockerfile => write!(f, "dockerfile"),
+            TemplateType::DockerCompose => write!(f, "docker-compose"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Template {
@@ -207,12 +310,22 @@ impl DevcontainerIndex {
         .flat_map(|collection| collection.features.iter())
     }
 
+    pub fn get_feature(&self, feature_id: &str) -> Option<&Feature> {
+        self.iter_features()
+        .find(|&feature| feature.id == feature_id)
+    }
+
     pub fn iter_templates(&self, include_deprecated: bool) -> impl Iterator<Item = &Template> {
         self.collections
         .iter()
         // There is one known collection that is deprecated, which is marked in the "maintainer" field.
         .filter(move |&collection| include_deprecated || !collection.source_information.maintainer.to_lowercase().contains("deprecated"))
         .flat_map(|collection| collection.templates.iter())
+    }
+
+    pub fn get_template(&self, template_id: &str) -> Option<&Template> {
+        self.iter_templates(true)
+        .find(|&template| template.id == template_id)
     }
 }
 
@@ -235,27 +348,20 @@ pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<(), Box<dy
     Ok(())
 }
 
-pub fn pull_template<P: AsRef<Path>>(folder: P, image_name: &ImageName) -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = distribution::Client::try_from(image_name)?;
-    let layer = distribution::get_image_layer(&mut client, image_name, |media_type| {
+pub fn pull_archive_bytes(id: &str, tag_name: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let raw_name = format!("{id}:{tag_name}");
+    let image_name = ImageName::parse(&raw_name)?;
+    let mut client = distribution::Client::try_from(&image_name)?;
+    let layer = distribution::get_image_layer(&mut client, &image_name, |media_type| {
         match media_type {
             MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.layer.v1+tar",
             _ => false,
         }
     })?;
-    // let filename =
-    //     layer.annotations()
-    //     .to_owned()
-    //     .and_then(|annotations| annotations.get("org.opencontainers.image.title").map(|title| title.to_owned()))
-    //     .unwrap_or_else(|| String::from("template.tar"));
     let digest = Digest::new(layer.digest())?;
     let blob = client.get_blob(&digest)?;
-    let mut archive = tar::Archive::new(blob.as_slice());
 
-    // TODO determine what files are actually needed.
-    archive.unpack(folder)?;
-
-    Ok(())
+    Ok(blob)
 }
 
 /// Read and parse the given filename.
@@ -291,20 +397,4 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
         )?;
 
     Ok(DevcontainerIndex { collections })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_pull_template() -> Result<(), Box<dyn std::error::Error>> {
-        let image_name = ImageName::parse("ghcr.io/devcontainers/templates/go:latest")?;
-        let tmpdir = tempfile::tempdir()?;
-        let result = pull_template(&tmpdir, &image_name);
-
-        std::fs::remove_dir_all(tmpdir)?;
-
-        result
-    }
 }
