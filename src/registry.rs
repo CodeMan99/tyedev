@@ -109,12 +109,15 @@ impl Display for BooleanDefaultType {
 pub enum StringDevOption {
     EnumValues {
         default: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
         description: Option<String>,
         r#enum: Vec<String>,
     },
     Proposals {
         default: Option<String>, // this field is actually required, but there are violations out there that need to be loaded.
+        #[serde(skip_serializing_if = "Option::is_none")]
         description: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         proposals: Option<Vec<String>>,
     },
 }
@@ -157,6 +160,7 @@ impl Display for StringDevOption {
 pub enum DevOption {
     Boolean {
         default: BooleanDefaultType, // this is sometimes a bool.
+        #[serde(skip_serializing_if = "Option::is_none")]
         description: Option<String>,
     },
     String (StringDevOption),
@@ -213,28 +217,46 @@ pub struct Feature {
     pub id: String,
     pub version: String,
     pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "documentationURL")]
+    #[serde(rename = "documentationURL", skip_serializing_if = "Option::is_none")]
     pub documentation_url: Option<String>,
-    #[serde(rename = "licenseURL")]
+    #[serde(rename = "licenseURL", skip_serializing_if = "Option::is_none")]
     pub license_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub keywords: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub options: Option<HashMap<String, DevOption>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub container_env: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub privileged: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub init: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cap_add: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub security_opt: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub entrypoint: Option<String>,
     // pub customizations: HashMap<String, String>, // this type is wrong - it is a dynamic field
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub installs_after: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lecagy_ids: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub deprecated: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mounts: Option<Vec<DockerMount>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub on_create_command: Option<LifecycleHook>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub update_content_command: Option<LifecycleHook>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub post_create_command: Option<LifecycleHook>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub post_start_command: Option<LifecycleHook>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub post_attach_command: Option<LifecycleHook>,
     pub owner: String,
     pub major_version: String,
@@ -265,17 +287,25 @@ pub struct Template {
     pub id: String,
     pub version: String,
     pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "documentationURL")]
+    #[serde(rename = "documentationURL", skip_serializing_if = "Option::is_none")]
     pub documentation_url: Option<String>,
-    #[serde(rename = "licenseURL")]
+    #[serde(rename = "licenseURL", skip_serializing_if = "Option::is_none")]
     pub license_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub options: Option<HashMap<String, DevOption>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub platforms: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub keywords: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<TemplateType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub file_count: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub feature_ids: Option<Vec<String>>,
     pub owner: String,
 }
