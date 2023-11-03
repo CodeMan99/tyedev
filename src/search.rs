@@ -123,33 +123,33 @@ fn lowercase_contains(inside: &str) -> impl FnOnce(&String,) -> bool {
 }
 
 trait SearchMatcher {
-    fn is_match(&self, field: &SearchFields, value: &String) -> bool;
+    fn is_match(&self, field: &SearchFields, value: &str) -> bool;
 }
 
 impl SearchMatcher for registry::Feature {
-    fn is_match(&self, field: &SearchFields, value: &String) -> bool {
+    fn is_match(&self, field: &SearchFields, value: &str) -> bool {
         match field {
-            SearchFields::Id => self.id == value.as_str(),
-            SearchFields::Name => self.name == value.as_str(),
+            SearchFields::Id => self.id == value,
+            SearchFields::Name => self.name == value,
             SearchFields::Description => self.description.as_ref().is_some_and(lowercase_contains(value)),
-            SearchFields::Keywords => self.keywords.as_ref().is_some_and(|keywords| keywords.contains(value)),
+            SearchFields::Keywords => self.keywords.as_ref().is_some_and(|keywords| keywords.contains(&String::from(value))),
         }
     }
 }
 
 impl SearchMatcher for registry::Template {
-    fn is_match(&self, field: &SearchFields, value: &String) -> bool {
+    fn is_match(&self, field: &SearchFields, value: &str) -> bool {
         match field {
             SearchFields::Id => self.id.to_lowercase().contains(value.to_lowercase().as_str()),
             SearchFields::Name => self.name.to_lowercase().contains(value.to_lowercase().as_str()),
             SearchFields::Description => self.description.as_ref().is_some_and(lowercase_contains(value)),
-            SearchFields::Keywords => self.keywords.as_ref().is_some_and(|keywords| keywords.contains(value)),
+            SearchFields::Keywords => self.keywords.as_ref().is_some_and(|keywords| keywords.contains(&String::from(value))),
         }
     }
 }
 
-fn search_match<T: SearchMatcher>(value: &T, text: &String, search_fields: &[SearchFields]) -> bool {
-    search_fields.iter().find(|&field| value.is_match(field, text)).is_some()
+fn search_match<T: SearchMatcher>(value: &T, text: &str, search_fields: &[SearchFields]) -> bool {
+    search_fields.iter().any(|field| value.is_match(field, text))
 }
 
 pub fn search(
