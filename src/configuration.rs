@@ -1,11 +1,3 @@
-// Task
-// 1. Get user input.
-// 2. Pull template.
-// 3. Unpack tar archive. Maybe store it in memory.
-// 4. Replace template options fields where appropiate.
-//     const pattern = /\${templateOption:\s*(\w+?)\s*}/g; // ${templateOption:XXXX}
-// 5. Apply modifications like adding features.
-
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::path::Path;
