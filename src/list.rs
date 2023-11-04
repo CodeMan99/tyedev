@@ -32,8 +32,8 @@ fn collection_templates_and_features(oci_reference: &str, collection: &Collectio
                 .and_then(|d| d.lines().next())
                 .unwrap_or_default();
             [
-                format!("{}", i + 1),
-                format!("{}", r.collection),
+                (i + 1).to_string(),
+                r.collection.to_string(),
                 r.id.replace(oci_reference, "~"),
                 r.name.to_string(),
                 description.to_string(),

@@ -192,7 +192,7 @@ impl DevOption {
             DevOption::Boolean { default, .. } => {
                 match default {
                     BooleanDefaultType::String(s) => s.clone(),
-                    BooleanDefaultType::Boolean(b) => format!("{}", b),
+                    BooleanDefaultType::Boolean(b) => b.to_string(),
                 }
             },
             DevOption::String(StringDevOption::Proposals { default, proposals, .. }) => {
