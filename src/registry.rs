@@ -212,6 +212,30 @@ impl DevOption {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
+pub struct Customizations(serde_json::Value);
+
+impl Customizations {
+    fn vscode_extensions_value(&self) -> Option<&Vec<JsonValue>> {
+        self.0.as_object()
+        .and_then(|customizations| customizations.get("vscode"))
+        .and_then(|vscode_value| vscode_value.as_object())
+        .and_then(|vscode| vscode.get("extensions"))
+        .and_then(|extensions_value| extensions_value.as_array())
+    }
+
+    pub fn vscode_extensions(&self) -> Option<Vec<String>> {
+        self.vscode_extensions_value().map(|extensions| {
+            extensions.iter()
+            .filter_map(|value| {
+                value.as_str()
+                .map(|extension_id| extension_id.to_string())
+            })
+            .collect()
+        })
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Feature {
     pub id: String,
@@ -239,7 +263,8 @@ pub struct Feature {
     pub security_opt: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entrypoint: Option<String>,
-    // pub customizations: HashMap<String, String>, // this type is wrong - it is a dynamic field
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub customizations: Option<Customizations>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub installs_after: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]

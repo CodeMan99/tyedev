@@ -131,6 +131,14 @@ impl Displayable for registry::Feature {
         data.maybe_push("Cap Add", self.cap_add.as_ref().map(comma_join));
         data.maybe_push("Security Opt", self.security_opt.as_ref().map(comma_join));
         data.maybe_push("Entrypoint", self.entrypoint.as_ref());
+
+        let vscode_extensions =
+            self.customizations.as_ref()
+            .and_then(|customizations| customizations.vscode_extensions())
+            .as_ref()
+            .map(comma_join);
+
+        data.maybe_push("VS Code Extensions", vscode_extensions);
         data.maybe_push("Installs After", self.installs_after.as_ref().map(comma_join));
         data.maybe_push("Legacy IDs", self.lecagy_ids.as_ref().map(comma_join));
         data.maybe_push("Deprecated", self.deprecated);
