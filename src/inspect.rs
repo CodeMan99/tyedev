@@ -229,7 +229,7 @@ fn display_install_sh(id: &str, tag_name: &str) -> Result<(), Box<dyn Error>> {
         let mut entry = entry?;
         let path = entry.path()?;
 
-        if path.to_str() == Some("./install.sh") {
+        if path.to_str().is_some_and(|p| p.ends_with("install.sh")) {
             let mut data: Vec<u8> = Vec::new();
 
             entry.read_to_end(&mut data)?;
