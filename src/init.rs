@@ -323,8 +323,8 @@ impl TemplateBuilder {
                             match devcontainer.get_mut("features").and_then(|f| f.as_object_mut()) {
                                 Some(features) => features.extend(self.features.features.clone()),
                                 None => {
-                                    let adding_features = self.features.as_value()?;
-                                    devcontainer.insert("features".into(), adding_features);
+                                    let features_value = self.features.as_value()?;
+                                    devcontainer.insert("features".into(), features_value);
                                 },
                             }
                             let file = File::create(filename)?;
