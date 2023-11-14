@@ -328,7 +328,7 @@ impl TemplateBuilder {
                                 },
                             }
                             let file = File::create(filename)?;
-                            serde_json::to_writer_pretty(file, &value)?;
+                            to_writer_pretty(file, &value)?;
                         } else {
                             let mut file = File::create(filename)?;
                             file.write_all(&with_context)?;
@@ -428,6 +428,13 @@ impl TemplateBuilder {
 
         Ok(tb)
     }
+}
+
+/// This is the same as `serde_json::to_writer_pretty` except with use of tabs for indentation.
+fn to_writer_pretty<W: io::Write, V: ?Sized + serde::Serialize>(writer: W, value: &V) -> serde_json::error::Result<()> {
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b"\t");
+    let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
+    value.serialize(&mut serializer)
 }
 
 #[derive(Debug, PartialEq)]
