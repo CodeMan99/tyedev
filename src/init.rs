@@ -318,7 +318,7 @@ impl TemplateBuilder {
                         if self.features.len() > 0 {
                             let mut bytes: Vec<u8> = Vec::new();
                             bytes.write_all(&with_context)?;
-                            let mut value: serde_json::Value = serde_jsonc::from_slice(bytes.as_slice())?;
+                            let mut value: Value = serde_jsonc::from_slice(bytes.as_slice())?;
                             let devcontainer = value.as_object_mut().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Format of devcontainer.json is invalid"))?;
                             match devcontainer.get_mut("features").and_then(|f| f.as_object_mut()) {
                                 Some(features) => features.extend(self.features.features.clone()),
