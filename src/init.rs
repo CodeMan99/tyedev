@@ -7,7 +7,7 @@ use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 
 use clap::Args;
-use regex::bytes::{Captures, Regex, RegexBuilder};
+use regex::bytes::{Captures, Regex};
 use serde_json::{self, Value, Map};
 use tar::{self, Archive, Builder, Header, EntryType};
 
@@ -310,61 +310,28 @@ impl TemplateBuilder {
 
                     let with_context = template_option_re.replace_all(bytes.as_mut_slice(), apply_context);
 
-                    if (filename.ends_with(".devcontainer/devcontainer.json") || filename.ends_with(".devcontainer.json")) && self.features.len() > 0 {
+                    if filename.ends_with(".devcontainer/devcontainer.json") || filename.ends_with(".devcontainer.json") {
                         if attempt_single_file && self.is_single_file_eligible() {
                             filename = workspace.join(".devcontainer.json");
                         }
 
-                        let features = self.features.as_value()?;
-                        let features = serde_json::to_vec_pretty(&features)?;
-                        let comment_re =
-                            RegexBuilder::new(r#"^(?<indent>\s*)//\s*?"features":\s*?\{\}(?<comma>,?)$"#)
-                            .multi_line(true)
-                            .build()?;
-                        if comment_re.is_match(&with_context) {
-                            let with_features = comment_re.replace(&with_context, |captures: &Captures| {
-                                let mut buffer: Vec<u8> = Vec::new();
-                                let indent = &captures["indent"];
-
-                                // TODO determine if a comma needs be inserted before the features
-                                buffer.extend_from_slice(indent);
-                                buffer.extend_from_slice(b"\"features\": ");
-
-                                let mut lines = features.split(|b| *b == b'\n');
-
-                                if let Some(first_line) = lines.next() {
-                                    buffer.extend_from_slice(first_line);
-                                }
-
-                                for line in lines {
-                                    buffer.push(b'\n');
-                                    buffer.extend_from_slice(indent);
-                                    buffer.extend_from_slice(line);
-                                }
-
-                                // TODO this logic is not actually good enough. The comments may include a comma for comments later in the file.
-                                if captures["comma"].len() == 1 {
-                                    buffer.extend_from_slice(b",\n");
-                                } else {
-                                    buffer.push(b'\n');
-                                }
-
-                                buffer
-                            });
-                            let mut file = File::create(filename)?;
-                            file.write_all(&with_features)?;
-                        } else {
-                            let mut bytes: Vec<u8> = with_context.bytes().flatten().collect();
-                            while bytes.pop().is_some_and(|b| b != b'}') {}
-                            bytes.extend_from_slice(b",\n\t\"features\": ");
-                            for line in features.split(|b| *b == b'\n') {
-                                bytes.extend_from_slice(line);
-                                bytes.extend_from_slice(b"\n\t");
+                        if self.features.len() > 0 {
+                            let mut bytes: Vec<u8> = Vec::new();
+                            bytes.write_all(&with_context)?;
+                            let mut value: Value = serde_jsonc::from_slice(bytes.as_slice())?;
+                            let devcontainer = value.as_object_mut().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Format of devcontainer.json is invalid"))?;
+                            match devcontainer.get_mut("features").and_then(|f| f.as_object_mut()) {
+                                Some(features) => features.extend(self.features.features.clone()),
+                                None => {
+                                    let features_value = self.features.as_value()?;
+                                    devcontainer.insert("features".into(), features_value);
+                                },
                             }
-                            bytes.pop();
-                            bytes.extend_from_slice(b"}\n");
+                            let file = File::create(filename)?;
+                            to_writer_pretty(file, &value)?;
+                        } else {
                             let mut file = File::create(filename)?;
-                            file.write_all(bytes.as_slice())?;
+                            file.write_all(&with_context)?;
                         }
                     } else {
                         let mut file = File::create(filename)?;
@@ -461,6 +428,13 @@ impl TemplateBuilder {
 
         Ok(tb)
     }
+}
+
+/// This is the same as `serde_json::to_writer_pretty` except with use of tabs for indentation.
+fn to_writer_pretty<W: io::Write, V: ?Sized + serde::Serialize>(writer: W, value: &V) -> serde_json::error::Result<()> {
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b"\t");
+    let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
+    value.serialize(&mut serializer)
 }
 
 #[derive(Debug, PartialEq)]
