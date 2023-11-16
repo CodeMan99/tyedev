@@ -165,7 +165,7 @@ pub fn search(
     let search_fields = fields.unwrap_or_else(|| vec![SearchFields::Id, SearchFields::Name, SearchFields::Description]);
     let results: Vec<SearchResult> = match collection {
         CollectionCategory::Features => {
-            index.iter_features()
+            index.iter_features(include_deprecated)
             .filter_map(|feature| if search_match(feature, &text, &search_fields) {
                 Some(SearchResult::from(feature))
             } else {

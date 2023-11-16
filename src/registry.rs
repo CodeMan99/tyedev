@@ -359,14 +359,18 @@ impl DevcontainerIndex {
         .find(|&collection| collection.source_information.oci_reference == oci_reference)
     }
 
-    pub fn iter_features(&self) -> impl Iterator<Item = &Feature> {
+    pub fn iter_features(&self, include_deprecated: bool) -> impl Iterator<Item = &Feature> {
+        let all = |_: &&Feature| true;
+        let not_deprecated = |&feature: &&Feature| feature.deprecated.map(|d| !d).unwrap_or(true);
+
         self.collections
         .iter()
         .flat_map(|collection| collection.features.iter())
+        .filter(if include_deprecated { all } else { not_deprecated })
     }
 
     pub fn get_feature(&self, feature_id: &str) -> Option<&Feature> {
-        self.iter_features()
+        self.iter_features(true)
         .find(|&feature| feature.id == feature_id)
     }
 

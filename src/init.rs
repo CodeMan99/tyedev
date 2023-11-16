@@ -42,6 +42,10 @@ pub struct InitArgs {
     #[arg(short = 'f', long, value_name = "OCI_REF")]
     include_features: Option<Vec<String>>,
 
+    // Include deprecated results when searching.
+    #[arg(long)]
+    include_deprecated: bool,
+
     /// Target workspace for the devcontainer configuration.
     #[arg(short, long, value_name = "DIRECTORY")]
     workspace_folder: Option<PathBuf>,
@@ -57,9 +61,9 @@ fn get_feature(index: &registry::DevcontainerIndex, feature_id: &str) -> Result<
 struct FeaturesAutocomplete(Vec<String>);
 
 impl FeaturesAutocomplete {
-    fn new(index: &registry::DevcontainerIndex) -> Self {
+    fn new(index: &registry::DevcontainerIndex, include_deprecated: bool) -> Self {
         let inner =
-            index.iter_features()
+            index.iter_features(include_deprecated)
             .map(|feature| feature.id.clone())
             .collect();
         FeaturesAutocomplete(inner)
@@ -483,6 +487,7 @@ pub fn init(
         template_id,
         tag_name,
         include_features,
+        include_deprecated,
         workspace_folder
     }: InitArgs
 ) -> Result<(), Box<dyn Error>> {
@@ -524,7 +529,7 @@ pub fn init(
 
             match start_point {
                 StartPoint::Existing => {
-                    let template_ids = index.iter_templates(false).map(|template| template.id.clone()).collect();
+                    let template_ids = index.iter_templates(include_deprecated).map(|template| template.id.clone()).collect();
                     let template_id = inquire::Select::new("Pick existing template from the index:", template_ids).prompt()?;
                     let template = index.get_template(&template_id);
                     TemplateBuilder::new(&template_id, &tag_name, template.cloned())?
@@ -568,7 +573,7 @@ pub fn init(
             let next = inquire::Confirm::new("Add a feature?").prompt()?;
 
             if next {
-                let features_autocomplete = FeaturesAutocomplete::new(index);
+                let features_autocomplete = FeaturesAutocomplete::new(index, include_deprecated);
                 let feature_id =
                     inquire::Text::new("Choose or enter feature id (OCI REF):")
                     .with_autocomplete(features_autocomplete)
