@@ -375,10 +375,13 @@ impl DevcontainerIndex {
     }
 
     pub fn iter_templates(&self, include_deprecated: bool) -> impl Iterator<Item = &Template> {
+        let all = |_: &&Collection| true;
+        // There is one known collection that is deprecated, which is marked in the "maintainer" field.
+        let not_deprecated = |&collection: &&Collection| !collection.source_information.maintainer.to_lowercase().contains("deprecated");
+
         self.collections
         .iter()
-        // There is one known collection that is deprecated, which is marked in the "maintainer" field.
-        .filter(move |&collection| include_deprecated || !collection.source_information.maintainer.to_lowercase().contains("deprecated"))
+        .filter(if include_deprecated { all } else { not_deprecated })
         .flat_map(|collection| collection.templates.iter())
     }
 
