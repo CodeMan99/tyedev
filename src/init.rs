@@ -328,7 +328,7 @@ impl TemplateBuilder {
                                 },
                             }
                             let file = File::create(filename)?;
-                            to_writer_pretty(file, &value)?;
+                            serde_json_pretty::to_writer_with_tabs(file, &value)?;
                         } else {
                             let mut file = File::create(filename)?;
                             file.write_all(&with_context)?;
@@ -430,11 +430,31 @@ impl TemplateBuilder {
     }
 }
 
-/// This is the same as `serde_json::to_writer_pretty` except with use of tabs for indentation.
-fn to_writer_pretty<W: io::Write, V: ?Sized + serde::Serialize>(writer: W, value: &V) -> serde_json::error::Result<()> {
-    let formatter = serde_json::ser::PrettyFormatter::with_indent(b"\t");
-    let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
-    value.serialize(&mut serializer)
+mod serde_json_pretty {
+    use std::io::Write;
+    use serde_json::{error::Result, ser::PrettyFormatter, Serializer};
+    use serde::Serialize;
+
+    /// This is the same as `serde_json::to_writer_pretty` except with use of tabs for indentation.
+    pub fn to_writer_with_tabs<W: Write, V: ?Sized + Serialize>(writer: W, value: &V) -> Result<()> {
+        let formatter = PrettyFormatter::with_indent(b"\t");
+        let mut serializer = Serializer::with_formatter(writer, formatter);
+        value.serialize(&mut serializer)
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        #[test]
+        fn test_to_writer_with_tabs() -> Result<()> {
+            let value = serde_json::json!({"test": {"deep": 1}});
+            let mut vec: Vec<u8> = Vec::new();
+            to_writer_with_tabs(&mut vec, &value)?;
+            let bytes = vec.as_slice();
+            assert_eq!(bytes, b"{\n\t\"test\": {\n\t\t\"deep\": 1\n\t}\n}");
+            Ok(())
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
