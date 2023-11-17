@@ -21,15 +21,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'devconf'",
+            "name": "Debug executable 'tyedev'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=devconf",
-                    "--package=devconf"
+                    "--bin=tyedev",
+                    "--package=tyedev"
                 ],
                 "filter": {
-                    "name": "devconf",
+                    "name": "tyedev",
                     "kind": "bin"
                 }
             },
@@ -39,16 +39,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'devconf'",
+            "name": "Debug unit tests in executable 'tyedev'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=devconf",
-                    "--package=devconf"
+                    "--bin=tyedev",
+                    "--package=tyedev"
                 ],
                 "filter": {
-                    "name": "devconf",
+                    "name": "tyedev",
                     "kind": "bin"
                 }
             },

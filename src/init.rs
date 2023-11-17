@@ -351,9 +351,9 @@ impl TemplateBuilder {
 
     fn create_empty_start_point() -> Result<Self, Box<dyn Error>> {
         let template_value = serde_json::json!({
-            "id": "devconf-base-template",
+            "id": "tyedev-base-template",
             "version": "1.0.0",
-            "name": "Base Template (devconf)",
+            "name": "Base Template (tyedev)",
             "options": {
                 "imageVariant": {
                     "type": "string",
@@ -407,7 +407,7 @@ impl TemplateBuilder {
         let dot_devcontainer_dir = create_directory_header(".devcontainer/")?;
         builder.get_mut().write_all(dot_devcontainer_dir.as_bytes())?;
 
-        let dot_devcontainer_json: &[u8] = b"{\n\t\"name\": \"devconf default\",\n\t\"image\": \"mcr.microsoft.com/devcontainers/base:${templateOption:imageVariant}\"\n}\n";
+        let dot_devcontainer_json: &[u8] = b"{\n\t\"name\": \"tyedev default\",\n\t\"image\": \"mcr.microsoft.com/devcontainers/base:${templateOption:imageVariant}\"\n}\n";
         let mut header_devcontainer_json = create_file_header(dot_devcontainer_json.len() as u64);
         builder.append_data(&mut header_devcontainer_json, ".devcontainer/devcontainer.json", dot_devcontainer_json)?;
 
@@ -419,7 +419,7 @@ impl TemplateBuilder {
 
         #[cfg(test)] {
             let tmp = env::temp_dir();
-            let mut file = File::create(tmp.join("devcontainer-template-devconf-default.tar"))?;
+            let mut file = File::create(tmp.join("devcontainer-template-tyedev-default.tar"))?;
             file.write_all(&archive_bytes)?;
         }
 

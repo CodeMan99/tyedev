@@ -1,4 +1,4 @@
-# devconf
+# tyedev
 
 Create and manage devcontainer configuration.
 
@@ -15,34 +15,34 @@ I (CodeMan99) would love any amount of assistance. In particular, general design
 The to see help on input flags.
 
 ```shell
-$ devconf --help
+$ tyedev --help
 ```
 
 All of the commands depend on a local copy of the _generated_ [collection index](https://github.com/devcontainers/devcontainers.github.io/blob/gh-pages/_data/collection-index.yml).
 
 ```shell
-$ devconf --pull-index
+$ tyedev --pull-index
 ```
 
 ### Features
 
 ...
 
-#### devconf init
+#### tyedev init
 
 Use to start a new project. Provide no arguments for the default interactive experience. Use `--help` to learn what can be provided as arguments.
 
 Note that `--remove-comments` is not yet actually supported. A better `jsonc` library would be helpful. May need to write my own.
 
-#### devconf inspect
+#### tyedev inspect
 
 Describe all details of a specific template or feature. The `id` is a required argument. Use as an aid when editing an existing `devcontainer.json`.
 
-#### devconf list
+#### tyedev list
 
 List collections overview. With `--collection-id` option display all features or templates for the given collection.
 
-#### devconf search
+#### tyedev search
 
 Find a template or feature from the official [collections](https://containers.dev/collections).
 
