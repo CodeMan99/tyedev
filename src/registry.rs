@@ -410,6 +410,7 @@ pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<(), Box<dy
     Ok(())
 }
 
+/// Pull bytes of the given OCI artifact, which is a reference to a given Feature or Template tar archive.
 pub fn pull_archive_bytes(id: &str, tag_name: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let raw_name = format!("{id}:{tag_name}");
     let image_name = ImageName::parse(&raw_name)?;
