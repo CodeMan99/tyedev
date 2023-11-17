@@ -392,7 +392,7 @@ impl DevcontainerIndex {
 }
 
 /// Pull OCI Artifact "ghcr.io/devcontainers/index:latest" and download the JSON layer to the given filename.
-pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<(), Box<dyn std::error::Error>> {
+pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> ocipkg::error::Result<()> {
     let image_name = ImageName::parse("ghcr.io/devcontainers/index:latest")?;
     let mut client = distribution::Client::try_from(&image_name)?;
     let layer = distribution::get_image_layer(&mut client, &image_name, |media_type| {
@@ -411,7 +411,7 @@ pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<(), Box<dy
 }
 
 /// Pull bytes of the given OCI artifact, which is a reference to a given Feature or Template tar archive.
-pub fn pull_archive_bytes(id: &str, tag_name: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+pub fn pull_archive_bytes(id: &str, tag_name: &str) -> ocipkg::error::Result<Vec<u8>> {
     let raw_name = format!("{id}:{tag_name}");
     let image_name = ImageName::parse(&raw_name)?;
     let mut client = distribution::Client::try_from(&image_name)?;
