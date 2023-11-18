@@ -2,6 +2,13 @@
 name = "tyedev"
 version = "0.1.0"
 edition = "2021"
+description = "Create and manage devcontainer configuration"
+repository = "https://github.com/CodeMan99/tyedev"
+license = "ISC"
+readme = "README.md"
+authors = ["Cody Taylor <codemister99@yahoo.com>"]
+keywords = ["devcontainers", "containers", "vscode", "development", "configuration", "cli"]
+categories = ["config", "command-line-utilities", "development-tools", "virtualization"]
 
 [dependencies]
 ascii_table = { version = "4.0.3", features = ["auto_table_width"] }
