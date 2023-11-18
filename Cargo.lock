@@ -1184,7 +1184,6 @@ dependencies = [
  "serde_json",
  "serde_jsonc",
  "tar",
- "tempfile",
 ]
 
 [[package]]
