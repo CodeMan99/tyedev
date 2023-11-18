@@ -129,8 +129,8 @@ trait SearchMatcher {
 impl SearchMatcher for registry::Feature {
     fn is_match(&self, field: &SearchFields, value: &str) -> bool {
         match field {
-            SearchFields::Id => self.id == value,
-            SearchFields::Name => self.name == value,
+            SearchFields::Id => lowercase_contains(value)(&self.id),
+            SearchFields::Name => lowercase_contains(value)(&self.name),
             SearchFields::Description => self.description.as_ref().is_some_and(lowercase_contains(value)),
             SearchFields::Keywords => self.keywords.as_ref().is_some_and(|keywords| keywords.contains(&String::from(value))),
         }
@@ -140,8 +140,8 @@ impl SearchMatcher for registry::Feature {
 impl SearchMatcher for registry::Template {
     fn is_match(&self, field: &SearchFields, value: &str) -> bool {
         match field {
-            SearchFields::Id => self.id.to_lowercase().contains(value.to_lowercase().as_str()),
-            SearchFields::Name => self.name.to_lowercase().contains(value.to_lowercase().as_str()),
+            SearchFields::Id => lowercase_contains(value)(&self.id),
+            SearchFields::Name => lowercase_contains(value)(&self.name),
             SearchFields::Description => self.description.as_ref().is_some_and(lowercase_contains(value)),
             SearchFields::Keywords => self.keywords.as_ref().is_some_and(|keywords| keywords.contains(&String::from(value))),
         }
