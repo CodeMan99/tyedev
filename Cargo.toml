@@ -16,8 +16,8 @@ clap = { version = "4.4.6", features = ["derive", "wrap_help"] }
 dirs = "5.0.1"
 human_format = "1.0.3"
 inquire = { version = "0.6.2", features = ["editor"] }
-oci-spec = "0.6.4"
-ocipkg = { git = "https://github.com/CodeMan99/ocipkg", branch = "feat/get-image-layer", version = "0.2.8" }
+oci-spec = "0.5.8" # using specifically this version to match ocipkg.
+ocipkg = "0.2.8"
 regex = "1.10.2"
 serde = { version = "1.0.188", features = ["derive"] }
 serde_json = { version = "1.0.107", features = ["preserve_order"] }

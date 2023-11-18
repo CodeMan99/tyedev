@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use oci_spec::image::MediaType;
-use ocipkg::{Digest, ImageName, distribution};
+use ocipkg::{Digest, ImageName, distribution::Client};
 use serde_json::Value as JsonValue;
 use serde::{Deserialize, Serialize};
 
@@ -391,18 +391,29 @@ impl DevcontainerIndex {
     }
 }
 
+fn get_layer_bytes(image_name: &ImageName, f: impl Fn(&MediaType) -> bool) -> ocipkg::error::Result<Vec<u8>> {
+    let registry_url = image_name.registry_url()?;
+    let mut client = Client::new(registry_url, image_name.name.clone())?;
+    let manifest = client.get_manifest(&image_name.reference)?;
+    let layer =
+        manifest.layers()
+        .iter()
+        .find(|&d| f(d.media_type()))
+        .ok_or(ocipkg::error::Error::MissingLayer)?;
+    let digest = Digest::new(layer.digest())?;
+
+    client.get_blob(&digest)
+}
+
 /// Pull OCI Artifact "ghcr.io/devcontainers/index:latest" and download the JSON layer to the given filename.
 pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> ocipkg::error::Result<()> {
     let image_name = ImageName::parse("ghcr.io/devcontainers/index:latest")?;
-    let mut client = distribution::Client::try_from(&image_name)?;
-    let layer = distribution::get_image_layer(&mut client, &image_name, |media_type| {
+    let blob = get_layer_bytes(&image_name, |media_type| {
         match media_type {
             MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.index.layer.v1+json",
             _ => false,
         }
     })?;
-    let digest = Digest::new(layer.digest())?;
-    let blob = client.get_blob(&digest)?;
     let mut file = File::create(filename)?;
 
     file.write_all(&blob[..])?;
@@ -414,15 +425,12 @@ pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> ocipkg::error::Re
 pub fn pull_archive_bytes(id: &str, tag_name: &str) -> ocipkg::error::Result<Vec<u8>> {
     let raw_name = format!("{id}:{tag_name}");
     let image_name = ImageName::parse(&raw_name)?;
-    let mut client = distribution::Client::try_from(&image_name)?;
-    let layer = distribution::get_image_layer(&mut client, &image_name, |media_type| {
+    let blob = get_layer_bytes(&image_name, |media_type| {
         match media_type {
             MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.layer.v1+tar",
             _ => false,
         }
     })?;
-    let digest = Digest::new(layer.digest())?;
-    let blob = client.get_blob(&digest)?;
 
     Ok(blob)
 }
