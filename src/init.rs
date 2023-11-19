@@ -462,18 +462,18 @@ mod serde_json_pretty {
 }
 
 #[derive(Debug, PartialEq)]
-enum StartPoint {
+enum PromptEntryAction {
     Existing,
     Enter,
     Empty,
 }
 
-impl Display for StartPoint {
+impl Display for PromptEntryAction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            StartPoint::Existing => write!(f, "Pick existing template"),
-            StartPoint::Enter => write!(f, "Enter known template OCI reference"),
-            StartPoint::Empty => write!(f, "Start from scratch"),
+            Self::Existing => write!(f, "Pick existing template"),
+            Self::Enter => write!(f, "Enter known template OCI reference"),
+            Self::Empty => write!(f, "Start from scratch"),
         }
     }
 }
@@ -522,24 +522,24 @@ pub fn init(
         },
         None => {
             let start_point = inquire::Select::new("Choose a starting point:", vec![
-                StartPoint::Existing,
-                StartPoint::Enter,
-                StartPoint::Empty,
+                PromptEntryAction::Existing,
+                PromptEntryAction::Enter,
+                PromptEntryAction::Empty,
             ]).prompt()?;
 
             match start_point {
-                StartPoint::Existing => {
+                PromptEntryAction::Existing => {
                     let template_ids = index.iter_templates(include_deprecated).map(|template| template.id.clone()).collect();
                     let template_id = inquire::Select::new("Pick existing template from the index:", template_ids).prompt()?;
                     let template = index.get_template(&template_id);
                     TemplateBuilder::new(&template_id, &tag_name, template.cloned())?
                 },
-                StartPoint::Enter => {
+                PromptEntryAction::Enter => {
                     let template_id = inquire::Text::new("Enter template by providing the OCI reference:").prompt()?;
                     let template = index.get_template(&template_id);
                     TemplateBuilder::new(&template_id, &tag_name, template.cloned())?
                 },
-                StartPoint::Empty => TemplateBuilder::create_empty_start_point()?,
+                PromptEntryAction::Empty => TemplateBuilder::create_empty_start_point()?,
             }
         },
     };
