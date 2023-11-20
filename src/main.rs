@@ -7,6 +7,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
+use clap_verbosity_flag::{Verbosity, WarnLevel};
 
 mod configuration;
 mod init;
@@ -22,6 +23,9 @@ struct Args {
     /// Pull the index of features & templates
     #[arg(short, long)]
     pull_index: bool,
+
+    #[command(flatten)]
+    verbose: Verbosity<WarnLevel>,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -40,6 +44,7 @@ enum Commands {
 }
 
 fn program_name() -> io::Result<String> {
+    log::debug!("program_name");
     let exe = env::current_exe()?;
     exe
     .file_name()
@@ -49,6 +54,7 @@ fn program_name() -> io::Result<String> {
 }
 
 fn data_directory<P: AsRef<Path>>(namespace: P) -> io::Result<PathBuf> {
+    log::debug!("data_directory");
     if let Some(path) = dirs::data_dir() {
         Ok(path.join(namespace))
     } else {
@@ -58,23 +64,30 @@ fn data_directory<P: AsRef<Path>>(namespace: P) -> io::Result<PathBuf> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
+
+    env_logger::Builder::new()
+    .filter_level(args.verbose.log_level_filter())
+    .format_timestamp_millis()
+    .init();
+
     let prog_name = program_name()?;
     let data_dir = data_directory(&prog_name)?;
     let index_file = data_dir.join("devcontainer-index.json");
 
     if args.pull_index {
         if !data_dir.exists() {
+            log::debug!("main: Creating data directory");
             fs::create_dir_all(&data_dir)?;
         }
 
         registry::pull_devcontainer_index(&index_file)?;
-        println!("Saved to {}", index_file.display());
+        log::info!("Saved to {}", index_file.display());
     }
 
     if let Some(command) = args.command {
         if !index_file.exists() {
             // suggested user action
-            eprintln!("Missing devcontainer-index.json.\n\n\tRun `{} --pull-index`.\n", prog_name);
+            log::error!("Missing devcontainer-index.json.\n\n\tRun `{} --pull-index`.\n", prog_name);
         }
 
         let index = registry::read_devcontainer_index(index_file)?;

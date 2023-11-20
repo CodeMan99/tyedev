@@ -407,6 +407,8 @@ fn get_layer_bytes(image_name: &ImageName, f: impl Fn(&MediaType) -> bool) -> oc
 
 /// Pull OCI Artifact "ghcr.io/devcontainers/index:latest" and download the JSON layer to the given filename.
 pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> ocipkg::error::Result<()> {
+    log::debug!("pull_devcontainer_index");
+
     let image_name = ImageName::parse("ghcr.io/devcontainers/index:latest")?;
     let blob = get_layer_bytes(&image_name, |media_type| {
         match media_type {
@@ -418,11 +420,15 @@ pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> ocipkg::error::Re
 
     file.write_all(&blob[..])?;
 
+    log::debug!("pull_devcontainer_index: wrote {} bytes", blob.len());
+
     Ok(())
 }
 
 /// Pull bytes of the given OCI artifact, which is a reference to a given Feature or Template tar archive.
 pub fn pull_archive_bytes(id: &str, tag_name: &str) -> ocipkg::error::Result<Vec<u8>> {
+    log::debug!("pull_archive_bytes");
+
     let raw_name = format!("{id}:{tag_name}");
     let image_name = ImageName::parse(&raw_name)?;
     let blob = get_layer_bytes(&image_name, |media_type| {
@@ -432,13 +438,19 @@ pub fn pull_archive_bytes(id: &str, tag_name: &str) -> ocipkg::error::Result<Vec
         }
     })?;
 
+    log::debug!("pull_archive_bytes: Pulled {} bytes for {}", blob.len(), &image_name);
+
     Ok(blob)
 }
 
 /// Read and parse the given filename.
 pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<DevcontainerIndex, Error> {
+    log::debug!("read_devcontainer_index");
+
     let file = File::open(filename)?;
     let json_value: JsonValue = serde_json::from_reader(file)?;
+    let mut features_count = 0;
+    let mut templates_count = 0;
     let collections: Vec<Collection> =
         json_value
         .as_object()
@@ -453,10 +465,14 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
                     // TODO: Skip errors of a single feature or template, not the entire collection
                     .filter_map(|value| {
                         match serde_json::from_value::<Collection>(value.to_owned()) {
-                            Ok(collection) => Some(collection),
+                            Ok(collection) => {
+                                features_count += collection.features.len();
+                                templates_count += collection.templates.len();
+                                Some(collection)
+                            },
                             Err(_) => {
                                 // TODO: parse the collection fields so that source_information can be displayed here.
-                                eprintln!("WARNING: Skipping collection due to parsing error");
+                                log::warn!("Skipping collection due to parsing error");
                                 None
                             },
                         }
@@ -466,6 +482,8 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
                 Ok(parsed)
             }
         )?;
+
+    log::debug!("read_devcontainer_index: Loaded {} collections, {} features, {} templates", collections.len(), features_count, templates_count);
 
     Ok(DevcontainerIndex { collections })
 }
