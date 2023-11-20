@@ -52,6 +52,7 @@ pub struct InitArgs {
 }
 
 fn get_feature(index: &registry::DevcontainerIndex, feature_id: &str) -> Result<registry::Feature, Box<dyn Error>> {
+    log::debug!("get_feature");
     // TODO allow input of the tag_name
     index.get_feature(feature_id)
     .map_or_else(|| pull_feature_configuration(feature_id, "latest"), |feature| Ok(feature.clone()))
@@ -97,6 +98,7 @@ impl inquire::Autocomplete for FeaturesAutocomplete {
 }
 
 fn pull_feature_configuration(feature_id: &str, tag_name: &str) -> Result<registry::Feature, Box<dyn Error>> {
+    log::debug!("pull_feature_configuration");
     let bytes = registry::pull_archive_bytes(feature_id, tag_name)?;
     let mut archive = Archive::new(bytes.as_slice());
     let entries = archive.entries()?;
@@ -106,7 +108,10 @@ fn pull_feature_configuration(feature_id: &str, tag_name: &str) -> Result<regist
         let filename = entry.path()?;
 
         if filename.to_str().is_some_and(|p| p.ends_with("devcontainer-feature.json")) {
+            let size = entry.size();
             let feature: registry::Feature = serde_json::from_reader(entry)?;
+
+            log::debug!("pull_feature_configuration: read {} bytes", size);
 
             return Ok(feature)
         }
@@ -122,12 +127,14 @@ struct FeatureEntryBuilder {
 
 impl FeatureEntryBuilder {
     fn new() -> Self {
+        log::debug!("FeatureEntryBuilder::new");
         FeatureEntryBuilder {
             features: HashMap::new(),
         }
     }
 
     fn use_prompt_values(&mut self, feature: &registry::Feature) -> Result<(), Box<dyn Error>> {
+        log::debug!("FeatureEntryBuilder::use_prompt_values");
         let key = format!("{}:{}", feature.id, feature.major_version);
         let value = {
             let mut inner = Map::new();
@@ -160,6 +167,7 @@ impl FeatureEntryBuilder {
     }
 
     fn use_default_values(&mut self, feature: &registry::Feature) -> Result<(), Box<dyn Error>> {
+        log::debug!("FeatureEntryBuilder::use_default_values");
         let key = format!("{}:{}", feature.id, feature.major_version);
         let value = Value::Object(Map::default());
 
@@ -187,6 +195,7 @@ struct TemplateBuilder {
 
 impl TemplateBuilder {
     fn new(template_id: &str, tag_name: &str, config: Option<registry::Template>) -> Result<Self, Box<dyn Error>> {
+        log::debug!("TemplateBuilder::new");
         let archive_bytes = registry::pull_archive_bytes(template_id, tag_name)?;
         let template_archive = TemplateBuilder {
             config,
@@ -203,6 +212,7 @@ impl TemplateBuilder {
     }
 
     fn replace_config(&mut self) -> Result<(), Box<dyn Error>> {
+        log::debug!("TemplateBuilder::replace_config");
         let mut tar = self.as_archive();
         let entries = tar.entries()?;
 
@@ -211,8 +221,12 @@ impl TemplateBuilder {
             let path = entry.path()?;
 
             if path.to_str().is_some_and(|p| p.ends_with("devcontainer-template.json")) {
+                let size = entry.size();
                 let config = serde_json::from_reader(entry)?;
+
                 self.config.replace(config);
+                log::debug!("TemplateBuilder::replace_config: read {} bytes", size);
+
                 return Ok(());
             }
         }
@@ -221,6 +235,7 @@ impl TemplateBuilder {
     }
 
     fn use_prompt_values(&mut self) -> Result<(), Box<dyn Error>> {
+        log::debug!("TemplateBuilder::use_prompt_values");
         let config = self.config.as_ref().ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Missing configuration"))?;
 
         if let Some(options) = &config.options {
@@ -237,6 +252,7 @@ impl TemplateBuilder {
     }
 
     fn use_default_values(&mut self) -> Result<(), Box<dyn Error>> {
+        log::debug!("TemplateBuilder::use_default_values");
         let config = self.config.as_ref().ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Missing configuration"))?;
 
         if let Some(options) = &config.options {
@@ -257,16 +273,19 @@ impl TemplateBuilder {
             if let Some(template_type) = template.r#type.as_ref() {
                 return match template_type {
                     registry::TemplateType::DockerCompose => {
-                        eprintln!("WARNING: Skipping --attempt-single-file as the selected template includes a docker-compose.yml");
+                        log::warn!("Skipping --attempt-single-file as the selected template includes a docker-compose.yml");
                         false
                     },
                     registry::TemplateType::Dockerfile => {
-                        eprintln!("WARNING: Skipping --attempt-single-file as the selected template includes a Dockerfile");
+                        log::warn!("Skipping --attempt-single-file as the selected template includes a Dockerfile");
                         false
                     },
                     // Most image templates have exactly four files: .devcontainer/devcontainer.json, devcontainer-feature.json, NOTES.md, README.md
-                    // Any other file is likely to reside in the .devcontainer/ directory.
-                    registry::TemplateType::Image => template.file_count.map(|count| count <= 4).unwrap_or(true),
+                    registry::TemplateType::Image if template.file_count.is_some_and(|count| count > 4) => {
+                        log::warn!("Skipping --attempt-single-file as the template likely contains more than just a devcontainer.json file");
+                        false
+                    },
+                    registry::TemplateType::Image => true,
                 }
             }
         }
@@ -276,15 +295,19 @@ impl TemplateBuilder {
 
     // TODO add logging here.
     fn apply_context_and_features(&mut self, attempt_single_file: bool, workspace: &Path) -> Result<(), Box<dyn Error>> {
+        log::debug!("TemplateBuilder::apply_context_and_features");
         let template_option_re = Regex::new(r"\$\{templateOption:\s*(?<name>\w+)\s*\}")?;
         let apply_context = |captures: &Captures| -> &[u8] {
             let name = &captures["name"];
             let name = std::str::from_utf8(name).ok();
             match name.and_then(|key| self.context.get(key)) {
-                Some(value) => value.as_bytes(),
+                Some(value) => {
+                    log::debug!("TemplateBuilder::apply_context_and_features: Replacing ${{templateOption:{}}} with \"{}\"", name.unwrap_or_default(), value);
+                    value.as_bytes()
+                },
                 None => {
-                    eprintln!("WARNING: No value provided for ${{templateOption:{}}}", name.unwrap_or_default());
-                    &[]
+                    log::warn!("No value provided for ${{templateOption:{}}}", name.unwrap_or_default());
+                    b""
                 }
             }
         };
@@ -299,15 +322,21 @@ impl TemplateBuilder {
         for entry in entries {
             let mut entry = entry?;
             let relative_path = entry.path()?;
-            let mut filename = workspace.join(relative_path);
+            let mut filename = workspace.join(relative_path).canonicalize()?;
 
             if template_skip.iter().any(|&name| filename.ends_with(name)) {
+                log::debug!("TemplateBuilder::apply_context_and_features: Skipping template file: {}", filename.display());
                 continue;
             }
 
             match entry.header().entry_type() {
-                EntryType::Directory => fs::create_dir_all(&filename)?,
+                EntryType::Directory => {
+                    log::info!("Creating directory: {}", filename.display());
+                    fs::create_dir_all(&filename)?;
+                },
                 EntryType::Regular | EntryType::Continuous => {
+                    log::info!("Reading file from template archive: {}", filename.display());
+
                     let mut bytes: Vec<u8> = Vec::with_capacity(entry.size() as usize);
 
                     entry.read_to_end(&mut bytes)?;
@@ -316,7 +345,7 @@ impl TemplateBuilder {
 
                     if filename.ends_with(".devcontainer/devcontainer.json") || filename.ends_with(".devcontainer.json") {
                         if attempt_single_file && self.is_single_file_eligible() {
-                            filename = workspace.join(".devcontainer.json");
+                            filename = workspace.join(".devcontainer.json").canonicalize()?;
                         }
 
                         if self.features.len() > 0 {
@@ -331,13 +360,17 @@ impl TemplateBuilder {
                                     devcontainer.insert("features".into(), features_value);
                                 },
                             }
+                            log::warn!("Comments have been stripped from devcontainer.json");
+                            log::info!("Writing to {}", filename.display());
                             let file = File::create(filename)?;
                             serde_json_pretty::to_writer_with_tabs(file, &value)?;
                         } else {
+                            log::info!("Writing to {}", filename.display());
                             let mut file = File::create(filename)?;
                             file.write_all(&with_context)?;
                         }
                     } else {
+                        log::info!("Writing to {}", filename.display());
                         let mut file = File::create(filename)?;
                         file.write_all(&with_context)?;
                     }
@@ -345,6 +378,8 @@ impl TemplateBuilder {
                 _ => (),
             }
         }
+
+        log::debug!("TemplateBuilder::apply_context_and_features: done");
 
         Ok(())
     }
@@ -491,6 +526,7 @@ pub fn init(
         workspace_folder
     }: InitArgs
 ) -> Result<(), Box<dyn Error>> {
+    log::debug!("init");
     // Do this evaluation of the `env` first so that it can error early.
     let workspace = workspace_folder.map_or_else(env::current_dir, Ok)?;
 
@@ -588,6 +624,7 @@ pub fn init(
     }
 
     template_builder.apply_context_and_features(attempt_single_file, &workspace)?;
+    log::debug!("init: done");
 
     Ok(())
 }
