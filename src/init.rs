@@ -42,7 +42,7 @@ pub struct InitArgs {
     #[arg(short = 'f', long, value_name = "OCI_REF")]
     include_features: Option<Vec<String>>,
 
-    // Include deprecated results when searching.
+    /// Include deprecated results when searching.
     #[arg(long)]
     include_deprecated: bool,
 
