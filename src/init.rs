@@ -293,7 +293,6 @@ impl TemplateBuilder {
         false
     }
 
-    // TODO add logging here.
     fn apply_context_and_features(&mut self, attempt_single_file: bool, workspace: &Path) -> Result<(), Box<dyn Error>> {
         log::debug!("TemplateBuilder::apply_context_and_features");
         let template_option_re = Regex::new(r"\$\{templateOption:\s*(?<name>\w+)\s*\}")?;
