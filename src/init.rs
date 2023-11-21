@@ -100,12 +100,6 @@ impl Autocomplete for DevOptionProposalsAutocomplete {
     }
 }
 
-pub trait DisplayPrompt {
-    type Item;
-
-    fn display_prompt(&self) -> Result<Self::Item, Box<dyn Error>>;
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum DevOptionPromptValue {
     String(String),
@@ -134,12 +128,8 @@ impl<'t> DevOptionPrompt<'t> {
             name,
         }
     }
-}
 
-impl<'t> DisplayPrompt for DevOptionPrompt<'t> {
-    type Item = DevOptionPromptValue;
-
-    fn display_prompt(&self) -> Result<Self::Item, Box<dyn Error>> {
+    fn display_prompt(&self) -> Result<DevOptionPromptValue, Box<dyn Error>> {
         let dev_option = self.inner;
         let default = dev_option.configured_default();
 
