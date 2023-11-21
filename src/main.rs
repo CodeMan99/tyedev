@@ -9,7 +9,6 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::{Verbosity, WarnLevel};
 
-mod configuration;
 mod init;
 mod inspect;
 mod list;
