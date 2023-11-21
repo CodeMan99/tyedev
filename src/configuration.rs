@@ -1,6 +1,5 @@
 use std::error::Error;
 use std::fmt::{self, Display};
-use std::path::Path;
 use std::result::Result;
 use std::str::FromStr;
 
@@ -48,10 +47,6 @@ impl Autocomplete for ProposalsAutocomplete {
             }
         }))
     }
-}
-
-pub trait TemplateContext {
-    fn render_file<P: AsRef<Path>>(&self, filename: P, buffer: &str) -> Result<usize, Box<dyn Error>>;
 }
 
 pub trait DisplayPrompt {
