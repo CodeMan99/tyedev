@@ -59,23 +59,23 @@ fn get_feature(index: &registry::DevcontainerIndex, feature_id: &str) -> Result<
 }
 
 #[derive(Clone, Debug, PartialEq, Default)]
-struct ProposalsAutocomplete(Vec<String>);
+struct DevOptionProposalsAutocomplete(Vec<String>);
 
-impl ProposalsAutocomplete {
-    fn new(default_value: &String, values: &[String]) -> ProposalsAutocomplete {
+impl DevOptionProposalsAutocomplete {
+    fn new(default_value: &String, values: &[String]) -> DevOptionProposalsAutocomplete {
         if default_value.is_empty() || values.contains(default_value) {
-            ProposalsAutocomplete(values.into())
+            DevOptionProposalsAutocomplete(values.into())
         } else {
             let mut all_values: Vec<String> = values.into();
             all_values.insert(0, default_value.clone());
-            ProposalsAutocomplete(all_values)
+            DevOptionProposalsAutocomplete(all_values)
         }
     }
 }
 
-impl Autocomplete for ProposalsAutocomplete {
+impl Autocomplete for DevOptionProposalsAutocomplete {
     fn get_suggestions(&mut self, input: &str) -> Result<Vec<String>, CustomUserError> {
-        let ProposalsAutocomplete(proposals) = self;
+        let DevOptionProposalsAutocomplete(proposals) = self;
         let input_lower = input.to_lowercase();
         let suggestions =
             proposals.iter()
@@ -167,7 +167,7 @@ impl<'t> DisplayPrompt for DevOptionPrompt<'t> {
             DevOption::String(StringDevOption::Proposals { description, proposals, .. }) => {
                 let message = description.as_ref().map_or_else(|| format!("What value for {}?", self.name), |s| s.clone());
                 let text_prompt = if let Some(values) = proposals.as_ref().filter(|&p| !p.is_empty()) {
-                    let autocomplete = ProposalsAutocomplete::new(&default, values);
+                    let autocomplete = DevOptionProposalsAutocomplete::new(&default, values);
 
                     Text::new(&message).with_default(&default).with_autocomplete(autocomplete)
                 } else {
