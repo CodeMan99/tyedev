@@ -6,7 +6,11 @@ use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
+#[cfg(feature = "completions")]
+use clap::CommandFactory;
 use clap::{Parser, Subcommand};
+#[cfg(feature = "completions")]
+use clap_complete::{generate, shells::Shell};
 use clap_verbosity_flag::{Verbosity, WarnLevel};
 
 mod init;
@@ -32,6 +36,9 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
+    /// Generate shell auto-complete configuration.
+    #[cfg(feature = "completions")]
+    Completions { shell: Shell },
     /// Create new devcontainer.
     Init (init::InitArgs),
     /// Display details of a specific feature, template, or collection.
@@ -92,6 +99,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         let index = registry::read_devcontainer_index(index_file)?;
 
         match command {
+            #[cfg(feature = "completions")]
+            Commands::Completions { shell } => {
+                generate(shell, &mut Args::command_for_update(), &prog_name, &mut io::stdout());
+            },
             Commands::Init (args) => init::init(&index, args)?,
             Commands::Inspect (args) => inspect::inspect(&index, args)?,
             Commands::List (args) => list::list(&index, args),
