@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{self, Display};
 use std::error::Error;
 use std::io::{self, Read, Write};
 
@@ -20,6 +20,16 @@ pub enum InspectDisplay {
     // Toml,
     // SExpressions,
     // URL, // QueryString like name=Cody&age=32
+}
+
+impl Display for InspectDisplay {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Table => write!(f, "table"),
+            Self::Json => write!(f, "json"),
+            Self::None => write!(f, "none"),
+        }        
+    }
 }
 
 #[derive(Debug, Args)]
@@ -189,6 +199,8 @@ impl Displayable for registry::Template {
 }
 
 fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> Result<(), Box<dyn Error>> {
+    log::debug!("display: as {}", format);
+
     match format {
         InspectDisplay::Json => value.display_json()?,
         InspectDisplay::Table => value.display_table(),
@@ -199,6 +211,8 @@ fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> Resul
 }
 
 fn display_files(id: &str, tag_name: &str) -> Result<(), Box<dyn Error>> {
+    log::debug!("display_files");
+
     let bytes = registry::pull_archive_bytes(id, tag_name)?;
     let mut archive = Archive::new(bytes.as_slice());
     let entries = archive.entries()?;
@@ -221,6 +235,8 @@ fn display_files(id: &str, tag_name: &str) -> Result<(), Box<dyn Error>> {
 }
 
 fn display_install_sh(id: &str, tag_name: &str) -> Result<(), Box<dyn Error>> {
+    log::debug!("display_install_sh");
+
     let bytes = registry::pull_archive_bytes(id, tag_name)?;
     let mut archive = Archive::new(bytes.as_slice());
     let entries = archive.entries()?;
@@ -252,21 +268,25 @@ pub fn inspect(
         show_files,
     }: InspectArgs
 ) -> Result<(), Box<dyn Error>> {
+    log::debug!("inspect");
+
     let collection = index.get_collection(&id);
     let feature = index.get_feature(&id);
     let template = index.get_template(&id);
 
     match (collection, feature, template) {
         (Some(c), None, None) => {
+            log::debug!("inspect: collection");
             display(c, &display_as)?;
 
             if show_files || install_sh {
-                eprintln!("WARNING: A collection is container of features & templates, not files.");
+                log::warn!("A collection is container of features & templates, not files.");
             }
 
             Ok(())
         },
         (None, Some(f), None) => {
+            log::debug!("inspect: feature");
             display(f, &display_as)?;
 
             if show_files {
@@ -280,6 +300,7 @@ pub fn inspect(
             Ok(())
         },
         (None, None, Some(t)) => {
+            log::debug!("inspect: template");
             display(t, &display_as)?;
 
             if show_files {
@@ -287,7 +308,7 @@ pub fn inspect(
             }
 
             if install_sh {
-                eprintln!("WARNING: Templates are not required to have an install.sh file.");
+                log::warn!("Templates are not required to have an install.sh file.");
             }
 
             Ok(())
@@ -295,6 +316,8 @@ pub fn inspect(
         (None, None, None) => Err(io::Error::new(io::ErrorKind::NotFound, "No match found for given id.")),
         _ => Err(io::Error::new(io::ErrorKind::Unsupported, "Multiple results found for given id.")),
     }?;
+
+    log::debug!("inspect: done");
 
     Ok(())
 }
