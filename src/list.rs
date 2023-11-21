@@ -12,6 +12,8 @@ pub struct ListArgs {
 }
 
 fn collection_templates_and_features(oci_reference: &str, collection: &Collection) {
+    log::debug!("collection_templates_and_features");
+
     let source_information = &collection.source_information;
 
     println!("Name:          {}", &source_information.name);
@@ -52,6 +54,8 @@ fn collection_templates_and_features(oci_reference: &str, collection: &Collectio
 }
 
 fn overview_collections(index: &DevcontainerIndex) {
+    log::debug!("overview_collections");
+
     let mut table = AsciiTable::default();
 
     table.column(0).set_header("Name");
@@ -74,6 +78,8 @@ fn overview_collections(index: &DevcontainerIndex) {
 }
 
 pub fn list(index: &DevcontainerIndex, ListArgs { collection_id }: ListArgs) {
+    log::debug!("list");
+
     match collection_id {
         Some(oci_reference) => {
             match index.get_collection(&oci_reference) {
@@ -83,4 +89,6 @@ pub fn list(index: &DevcontainerIndex, ListArgs { collection_id }: ListArgs) {
         },
         None => overview_collections(index),
     }
+
+    log::debug!("list: done");
 }
