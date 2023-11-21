@@ -162,9 +162,13 @@ pub fn search(
         include_deprecated,
     }: SearchArgs
 ) -> Result<(), Box<dyn Error>> {
+    log::debug!("search");
+
     let search_fields = fields.unwrap_or_else(|| vec![SearchFields::Id, SearchFields::Name, SearchFields::Description]);
+    log::debug!("search: search_fields = {:?}", &search_fields);
     let results: Vec<SearchResult> = match collection {
         CollectionCategory::Features => {
+            log::debug!("search: features");
             index.iter_features(include_deprecated)
             .filter_map(|feature| if search_match(feature, &text, &search_fields) {
                 Some(SearchResult::from(feature))
@@ -174,6 +178,7 @@ pub fn search(
             .collect()
         },
         CollectionCategory::Templates => {
+            log::debug!("search: templates");
             index.iter_templates(include_deprecated)
             .filter_map(|template| if search_match(template, &text, &search_fields) {
                 Some(SearchResult::from(template))
@@ -209,6 +214,8 @@ pub fn search(
             println!("{}", json);
         },
     }
+
+    log::debug!("search: done");
 
     Ok(())
 }
