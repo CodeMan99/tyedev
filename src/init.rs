@@ -58,6 +58,29 @@ fn get_feature(index: &registry::DevcontainerIndex, feature_id: &str) -> Result<
     .map_or_else(|| pull_feature_configuration(feature_id, "latest"), |feature| Ok(feature.clone()))
 }
 
+fn pull_feature_configuration(feature_id: &str, tag_name: &str) -> Result<registry::Feature, Box<dyn Error>> {
+    log::debug!("pull_feature_configuration");
+    let bytes = registry::pull_archive_bytes(feature_id, tag_name)?;
+    let mut archive = Archive::new(bytes.as_slice());
+    let entries = archive.entries()?;
+
+    for entry in entries {
+        let entry = entry?;
+        let filename = entry.path()?;
+
+        if filename.to_str().is_some_and(|p| p.ends_with("devcontainer-feature.json")) {
+            let size = entry.size();
+            let feature: registry::Feature = serde_json::from_reader(entry)?;
+
+            log::debug!("pull_feature_configuration: read {} bytes", size);
+
+            return Ok(feature)
+        }
+    }
+
+    Err(io::Error::new(io::ErrorKind::NotFound, "No devcontainer-feature.json found in archive"))?
+}
+
 #[derive(Clone, Debug, PartialEq, Default)]
 struct DevOptionProposalsAutocomplete(Vec<String>);
 
@@ -209,29 +232,6 @@ impl inquire::Autocomplete for FeaturesAutocomplete {
             }
         }))
     }
-}
-
-fn pull_feature_configuration(feature_id: &str, tag_name: &str) -> Result<registry::Feature, Box<dyn Error>> {
-    log::debug!("pull_feature_configuration");
-    let bytes = registry::pull_archive_bytes(feature_id, tag_name)?;
-    let mut archive = Archive::new(bytes.as_slice());
-    let entries = archive.entries()?;
-
-    for entry in entries {
-        let entry = entry?;
-        let filename = entry.path()?;
-
-        if filename.to_str().is_some_and(|p| p.ends_with("devcontainer-feature.json")) {
-            let size = entry.size();
-            let feature: registry::Feature = serde_json::from_reader(entry)?;
-
-            log::debug!("pull_feature_configuration: read {} bytes", size);
-
-            return Ok(feature)
-        }
-    }
-
-    Err(io::Error::new(io::ErrorKind::NotFound, "No devcontainer-feature.json found in archive"))?
 }
 
 #[derive(Clone, Debug, Default)]
