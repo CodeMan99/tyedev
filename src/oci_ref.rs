@@ -25,3 +25,36 @@ impl FromStr for OciReference {
         .map(OciReference)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use ocipkg::error::Result;
+    use super::OciReference;
+
+    #[test]
+    fn test_parse() -> Result<()> {
+        let OciReference(image_name) = str::parse("ghcr.io/devcontainers/templates/rust")?;
+
+        assert_eq!(image_name.to_string(), "ghcr.io/devcontainers/templates/rust:latest");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_id() -> Result<()> {
+        let oci_ref: OciReference = str::parse("ghcr.io/devcontainers/templates/cpp:2")?;
+
+        assert_eq!(oci_ref.id(), "ghcr.io/devcontainers/templates/cpp");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_tag_name() -> Result<()> {
+        let oci_ref: OciReference = str::parse("github-actions/templates/release:lts")?;
+
+        assert_eq!(oci_ref.tag_name(), "lts");
+
+        Ok(())
+    }
+}
