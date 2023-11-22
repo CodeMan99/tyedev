@@ -9,7 +9,7 @@ readme = "README.md"
 authors = ["Cody Taylor <codemister99@yahoo.com>"]
 keywords = ["devcontainers", "containers", "vscode", "development", "configuration", "cli"]
 categories = ["config", "command-line-utilities", "development-tools", "virtualization"]
-include = ["LICENSE.txt", "src/"]
+include = ["LICENSE.txt", "src/", "static/"]
 
 [dependencies]
 ascii_table = { version = "4.0.3", features = ["auto_table_width"] }

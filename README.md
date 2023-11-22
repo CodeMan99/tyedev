@@ -1,5 +1,8 @@
 # tyedev
 
+![white tyedev logo](./static/tyedev-white.png#gh-dark-mode-only)
+![black tyedev logo](./static/tyedev-black.png#gh-light-mode-only)
+
 Create and manage devcontainer configuration.
 
 ## Work in Progress
