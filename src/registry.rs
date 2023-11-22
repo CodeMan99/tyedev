@@ -1,5 +1,5 @@
 use std::fmt::{self, Display};
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{Error, ErrorKind, Write};
 use std::collections::HashMap;
 use std::path::Path;
@@ -448,8 +448,8 @@ pub fn pull_archive_bytes(oci_ref: &OciReference) -> ocipkg::error::Result<Vec<u
 pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<DevcontainerIndex, Error> {
     log::debug!("read_devcontainer_index");
 
-    let file = File::open(filename)?;
-    let json_value: JsonValue = serde_json::from_reader(file)?;
+    let file = fs::read_to_string(filename)?;
+    let json_value: JsonValue = serde_json::from_str(&file)?;
     let mut features_count = 0;
     let mut templates_count = 0;
     let collections: Vec<Collection> =
