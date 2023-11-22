@@ -432,7 +432,7 @@ pub fn pull_archive_bytes(oci_ref: &OciReference) -> ocipkg::error::Result<Vec<u
     log::debug!("pull_archive_bytes");
 
     let OciReference(image_name) = oci_ref;
-    let blob = get_layer_bytes(&image_name, |media_type| {
+    let blob = get_layer_bytes(image_name, |media_type| {
         match media_type {
             MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.layer.v1+tar",
             _ => false,
