@@ -62,12 +62,14 @@ fn pull_feature_configuration(feature_ref: &OciReference) -> Result<registry::Fe
     let entries = archive.entries()?;
 
     for entry in entries {
-        let entry = entry?;
+        let mut entry = entry?;
         let filename = entry.path()?;
 
         if filename.to_str().is_some_and(|p| p.ends_with("devcontainer-feature.json")) {
-            let size = entry.size();
-            let feature: registry::Feature = serde_json::from_reader(entry)?;
+            let size = entry.size() as usize;
+            let mut data: Vec<u8> = Vec::with_capacity(size);
+            entry.read_to_end(&mut data)?;
+            let feature: registry::Feature = serde_json::from_slice(data.as_slice())?;
 
             log::debug!("pull_feature_configuration: read {} bytes", size);
 
@@ -328,12 +330,14 @@ impl TemplateBuilder {
         let entries = tar.entries()?;
 
         for entry in entries {
-            let entry = entry?;
+            let mut entry = entry?;
             let path = entry.path()?;
 
             if path.to_str().is_some_and(|p| p.ends_with("devcontainer-template.json")) {
-                let size = entry.size();
-                let config = serde_json::from_reader(entry)?;
+                let size = entry.size() as usize;
+                let mut data: Vec<u8> = Vec::with_capacity(size);
+                entry.read_to_end(&mut data)?;
+                let config = serde_json::from_slice(data.as_slice())?;
 
                 self.config.replace(config);
                 log::debug!("TemplateBuilder::replace_config: read {} bytes", size);
