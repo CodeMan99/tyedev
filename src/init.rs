@@ -14,6 +14,7 @@ use regex::bytes::{Captures, Regex};
 use serde_json::{self, Value, Map};
 use tar::{self, Archive, Builder, Header, EntryType};
 
+use crate::oci_ref::OciReference;
 use crate::registry::{self, DevOption, StringDevOption};
 
 #[derive(Debug, Args)]
@@ -32,15 +33,11 @@ pub struct InitArgs {
 
     /// Reference to a Template in a supported OCI registry.
     #[arg(short, long, value_name = "OCI_REF")]
-    template_id: Option<String>,
-
-    /// The tag name to use when pulling the template files.
-    #[arg(short = 'n', long, default_value = "latest")]
-    tag_name: String,
+    template_id: Option<OciReference>,
 
     /// Add the given features, may specify more than once.
     #[arg(short = 'f', long, value_name = "OCI_REF")]
-    include_features: Option<Vec<String>>,
+    include_features: Option<Vec<OciReference>>,
 
     /// Include deprecated results when searching.
     #[arg(long)]
@@ -51,16 +48,16 @@ pub struct InitArgs {
     workspace_folder: Option<PathBuf>,
 }
 
-fn get_feature(index: &registry::DevcontainerIndex, feature_id: &str) -> Result<registry::Feature, Box<dyn Error>> {
+fn get_feature(index: &registry::DevcontainerIndex, feature_ref: &OciReference) -> Result<registry::Feature, Box<dyn Error>> {
     log::debug!("get_feature");
-    // TODO allow input of the tag_name
-    index.get_feature(feature_id)
-    .map_or_else(|| pull_feature_configuration(feature_id, "latest"), |feature| Ok(feature.clone()))
+
+    index.get_feature(&feature_ref.id())
+    .map_or_else(|| pull_feature_configuration(feature_ref), |feature| Ok(feature.clone()))
 }
 
-fn pull_feature_configuration(feature_id: &str, tag_name: &str) -> Result<registry::Feature, Box<dyn Error>> {
+fn pull_feature_configuration(feature_ref: &OciReference) -> Result<registry::Feature, Box<dyn Error>> {
     log::debug!("pull_feature_configuration");
-    let bytes = registry::pull_archive_bytes(feature_id, tag_name)?;
+    let bytes = registry::pull_archive_bytes(feature_ref)?;
     let mut archive = Archive::new(bytes.as_slice());
     let entries = archive.entries()?;
 
@@ -308,9 +305,9 @@ struct TemplateBuilder {
 }
 
 impl TemplateBuilder {
-    fn new(template_id: &str, tag_name: &str, config: Option<registry::Template>) -> Result<Self, Box<dyn Error>> {
+    fn new(template_ref: &OciReference, config: Option<registry::Template>) -> Result<Self, Box<dyn Error>> {
         log::debug!("TemplateBuilder::new");
-        let archive_bytes = registry::pull_archive_bytes(template_id, tag_name)?;
+        let archive_bytes = registry::pull_archive_bytes(template_ref)?;
         let template_archive = TemplateBuilder {
             config,
             context: HashMap::new(),
@@ -633,7 +630,6 @@ pub fn init(
         attempt_single_file,
         remove_comments: _,
         template_id,
-        tag_name,
         include_features,
         include_deprecated,
         workspace_folder
@@ -660,11 +656,12 @@ pub fn init(
      *             4(b). Prompt loop to (A)ccept, (E)dit, (R)estart, or (Q)uit
      * Done           5. Write files to disk.
      */
-    let mut template_builder: TemplateBuilder = match template_id {
-        Some(id) => {
+    let mut template_builder: TemplateBuilder = match &template_id {
+        Some(template_ref) => {
+            let id = template_ref.id();
             let template = index.get_template(&id);
 
-            TemplateBuilder::new(&id, &tag_name, template.cloned())?
+            TemplateBuilder::new(template_ref, template.cloned())?
         },
         None if non_interactive => {
             Err(io::Error::new(io::ErrorKind::InvalidInput, "Must provide --template-id in non-interactive mode"))?
@@ -680,39 +677,42 @@ pub fn init(
                 PromptEntryAction::Existing => {
                     let template_ids = index.iter_templates(include_deprecated).map(|template| template.id.clone()).collect();
                     let template_id = inquire::Select::new("Pick existing template from the index:", template_ids).prompt()?;
+                    let template_ref = template_id.parse()?;
                     let template = index.get_template(&template_id);
-                    TemplateBuilder::new(&template_id, &tag_name, template.cloned())?
+                    TemplateBuilder::new(&template_ref, template.cloned())?
                 },
                 PromptEntryAction::Enter => {
                     let template_id = inquire::Text::new("Enter template by providing the OCI reference:").prompt()?;
+                    let template_ref = template_id.parse()?;
                     let template = index.get_template(&template_id);
-                    TemplateBuilder::new(&template_id, &tag_name, template.cloned())?
+                    TemplateBuilder::new(&template_ref, template.cloned())?
                 },
                 PromptEntryAction::Empty => TemplateBuilder::create_empty_start_point()?,
             }
         },
     };
 
-    if tag_name != "latest" || template_builder.config.is_none() {
+    if template_id.as_ref().is_some_and(|oci_ref| oci_ref.tag_name() != "latest") || template_builder.config.is_none() {
         template_builder.replace_config()?;
     }
 
     if non_interactive {
         template_builder.use_default_values()?;
 
-        if let Some(feature_ids) = include_features {
-            for feature_id in feature_ids {
-                let feature = get_feature(index, &feature_id)?;
+        if let Some(feature_refs) = include_features {
+            for feature_ref in feature_refs {
+                let feature = get_feature(index, &feature_ref)?;
+                log::info!("Adding feature: {}", feature_ref.id());
                 template_builder.features.use_default_values(&feature)?;
             }
         }
     } else {
         template_builder.use_prompt_values()?;
 
-        if let Some(feature_ids) = include_features {
-            for feature_id in feature_ids {
-                let feature = get_feature(index, &feature_id)?;
-                println!("Adding feature: {feature_id}");
+        if let Some(feature_refs) = include_features {
+            for feature_ref in feature_refs {
+                let feature = get_feature(index, &feature_ref)?;
+                println!("Adding feature: {}", feature_ref.id());
                 template_builder.features.use_prompt_values(&feature)?;
             }
         }
@@ -723,11 +723,12 @@ pub fn init(
 
             if next {
                 let features_autocomplete = FeaturesAutocomplete::new(index, include_deprecated);
-                let feature_id =
+                let input =
                     inquire::Text::new("Choose or enter feature id (OCI REF):")
                     .with_autocomplete(features_autocomplete)
                     .prompt()?;
-                let feature = get_feature(index, &feature_id)?;
+                let feature_ref: OciReference = input.parse()?;
+                let feature = get_feature(index, &feature_ref)?;
 
                 template_builder.features.use_prompt_values(&feature)?;
             } else {

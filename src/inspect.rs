@@ -7,6 +7,7 @@ use clap::{Args, ValueEnum};
 use human_format::Formatter;
 use tar::Archive;
 
+use crate::oci_ref::OciReference;
 use crate::registry;
 
 #[derive(Clone, Debug, Default, ValueEnum)]
@@ -36,11 +37,7 @@ impl Display for InspectDisplay {
 pub struct InspectArgs {
     /// The `id` to inspect.
     #[arg(value_name = "OCI_REF")]
-    id: String,
-
-    /// Use this tag when pulling from the registry.
-    #[arg(short, long, default_value = "latest")]
-    tag_name: String,
+    oci_ref: OciReference,
 
     /// Format for displaying the configuration.
     #[arg(short, long, value_name = "FORMAT", default_value = "table")]
@@ -210,10 +207,10 @@ fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> Resul
     Ok(())
 }
 
-fn display_files(id: &str, tag_name: &str) -> Result<(), Box<dyn Error>> {
+fn display_files(oci_ref: &OciReference) -> Result<(), Box<dyn Error>> {
     log::debug!("display_files");
 
-    let bytes = registry::pull_archive_bytes(id, tag_name)?;
+    let bytes = registry::pull_archive_bytes(oci_ref)?;
     let mut archive = Archive::new(bytes.as_slice());
     let entries = archive.entries()?;
 
@@ -234,10 +231,10 @@ fn display_files(id: &str, tag_name: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn display_install_sh(id: &str, tag_name: &str) -> Result<(), Box<dyn Error>> {
+fn display_install_sh(oci_ref: &OciReference) -> Result<(), Box<dyn Error>> {
     log::debug!("display_install_sh");
 
-    let bytes = registry::pull_archive_bytes(id, tag_name)?;
+    let bytes = registry::pull_archive_bytes(oci_ref)?;
     let mut archive = Archive::new(bytes.as_slice());
     let entries = archive.entries()?;
 
@@ -261,8 +258,7 @@ fn display_install_sh(id: &str, tag_name: &str) -> Result<(), Box<dyn Error>> {
 pub fn inspect(
     index: &registry::DevcontainerIndex,
     InspectArgs {
-        id,
-        tag_name,
+        oci_ref,
         display_as,
         install_sh,
         show_files,
@@ -270,6 +266,7 @@ pub fn inspect(
 ) -> Result<(), Box<dyn Error>> {
     log::debug!("inspect");
 
+    let id = oci_ref.id();
     let collection = index.get_collection(&id);
     let feature = index.get_feature(&id);
     let template = index.get_template(&id);
@@ -290,11 +287,11 @@ pub fn inspect(
             display(f, &display_as)?;
 
             if show_files {
-                display_files(&id, &tag_name)?;
+                display_files(&oci_ref)?;
             }
 
             if install_sh {
-                display_install_sh(&id, &tag_name)?;
+                display_install_sh(&oci_ref)?;
             }
 
             Ok(())
@@ -304,7 +301,7 @@ pub fn inspect(
             display(t, &display_as)?;
 
             if show_files {
-                display_files(&id, &tag_name)?;
+                display_files(&oci_ref)?;
             }
 
             if install_sh {

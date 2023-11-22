@@ -16,6 +16,7 @@ use clap_verbosity_flag::{Verbosity, WarnLevel};
 mod init;
 mod inspect;
 mod list;
+mod oci_ref;
 mod registry;
 mod search;
 

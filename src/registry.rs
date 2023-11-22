@@ -9,6 +9,8 @@ use ocipkg::{Digest, ImageName, distribution::Client};
 use serde_json::Value as JsonValue;
 use serde::{Deserialize, Serialize};
 
+use crate::oci_ref::OciReference;
+
 // PartialOrd, Hash, Eq, Ord
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -426,11 +428,10 @@ pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> ocipkg::error::Re
 }
 
 /// Pull bytes of the given OCI artifact, which is a reference to a given Feature or Template tar archive.
-pub fn pull_archive_bytes(id: &str, tag_name: &str) -> ocipkg::error::Result<Vec<u8>> {
+pub fn pull_archive_bytes(oci_ref: &OciReference) -> ocipkg::error::Result<Vec<u8>> {
     log::debug!("pull_archive_bytes");
 
-    let raw_name = format!("{id}:{tag_name}");
-    let image_name = ImageName::parse(&raw_name)?;
+    let OciReference(image_name) = oci_ref;
     let blob = get_layer_bytes(&image_name, |media_type| {
         match media_type {
             MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.layer.v1+tar",
