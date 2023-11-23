@@ -63,6 +63,7 @@ A _devcontainer_ exists for this project. There are some permissions errors that
 - `devcontainerx` - [Unofficial CLI](https://github.com/stuartleeks/devcontainer-cli) to improve the experience of working with Visual Studio Code devcontainers.
 - `vscli` - A CLI tool to [launch vscode projects](https://github.com/michidk/vscli), which supports devcontainers.
 - `devcon` - [Start devcontainers without vscode](https://github.com/guitsaru/devcon).
+- `devopen` - Simple [bash function](https://gist.github.com/CodeMan99/852d8539bd35a347a48d4a6119ff70e7) to open a devcontaienr project from a WSL directory.
 - As well as other [supporting tools](https://containers.dev/supporting) in the devcontainer ecosystem.
 
 ## General Devcontainers Resources
