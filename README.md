@@ -152,7 +152,7 @@ Options:
   -h, --help                     Print help
 ```
 
-Example: Find a _feature_ with `circleci` in the _name_ field only, and output as _json_.
+Example: Find a _feature_ with `circleci-cli` in the _id_ field only, and output as _json_.
 
 ```shell
 $ tyedev search --quiet -d json -f id -c features circleci-cli | jq '.[1]'
