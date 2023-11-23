@@ -43,7 +43,7 @@ Find a template or feature from the official [collections](https://containers.de
 
 ### Non-Features
 
-This project avoids interop with docker or any editor.
+This project avoids interop with docker or any editor. Please see the [related tools](#related-tools) list to accomplish runtime needs.
 
 ## Work in Progress
 
