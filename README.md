@@ -61,4 +61,8 @@ A _devcontainer_ exists for this project. There are some permissions errors that
 - `vscli` - A CLI tool to [launch vscode projects](https://github.com/michidk/vscli), which supports devcontainers.
 - `devcon` - [Start devcontainers without vscode](https://github.com/guitsaru/devcon).
 - As well as other [supporting tools](https://containers.dev/supporting) in the devcontainer ecosystem.
-- Additional resources at the [awesome-devcontainers](https://github.com/manekinekko/awesome-devcontainers) repository.
+
+## General Devcontainers Resources
+
+- The [VSCode Overview](https://code.visualstudio.com/docs/devcontainers/containers) documentation.
+- The [awesome-devcontainers](https://github.com/manekinekko/awesome-devcontainers) repository.
