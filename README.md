@@ -5,14 +5,6 @@
 
 Create and manage devcontainer configuration.
 
-## Work in Progress
-
-This project is absolutely a work in progress. Bugs do exist. More documentation needs to be written. More tests need to be written. General design patterns need to be reviewed.
-
-### Assist
-
-I (CodeMan99) would love any amount of assistance. In particular, general design patterns. I am learning Rust and this project is my first _sharable_ tool in the language.
-
 ## Usage
 
 The to see help on input flags.
@@ -53,9 +45,28 @@ Find a template or feature from the official [collections](https://containers.de
 
 This project avoids interop with docker or any editor.
 
-## Contributing
+## Work in Progress
 
-A _devcontainer_ exists for this project. There are some permissions errors that need to be sorted out for `/usr/local/cargo`. Feel free to ask questions.
+This project is absolutely a work in progress. Bugs do exist. More documentation needs to be written. More tests need to be written. General design patterns need to be reviewed.
+
+### Contributing
+
+How to help!
+
+- :wrench: Just use the tool. :speaking_head: Feedback is appreciated.
+- :bug: Report bugs.
+- :book: Improve documentation.
+- :computer: Contribute code directly.
+
+### Devcontainer
+
+For code contributions please use the _devcontainer_ for this project.
+
+There are some permissions errors that need to be sorted out for `/usr/local/cargo`. Upstream issues have already been filed. For now just correct this manually.
+
+```shell
+$ sudo chmod -R g+w $CARGO_HOME
+```
 
 ## Related Tools
 
