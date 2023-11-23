@@ -57,7 +57,7 @@ A _devcontainer_ exists for this project. There are some permissions errors that
 ## Related Tools
 
 - `devcontainer` - [Official CLI](https://github.com/devcontainers/cli) tool. Primary use is building and executing containers.
-- `devcontainerx` - [Unofficial CLI](https://github.com/stuartleeks/devcontainer-cli) to improve the experience of working with Visual Studio Code dev containers.
+- `devcontainerx` - [Unofficial CLI](https://github.com/stuartleeks/devcontainer-cli) to improve the experience of working with Visual Studio Code devcontainers.
 - `vscli` - A CLI tool to [launch vscode projects](https://github.com/michidk/vscli), which supports devcontainers.
 - `devcon` - [Start devcontainers without vscode](https://github.com/guitsaru/devcon).
 - As well as other [supporting tools](https://containers.dev/supporting) in the devcontainer ecosystem.
