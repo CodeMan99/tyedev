@@ -1,8 +1,8 @@
 use std::error::Error;
 use std::fmt;
 
-use clap::{Args, ValueEnum};
 use clap::builder::PossibleValue;
+use clap::{Args, ValueEnum};
 use serde::{Deserialize, Serialize};
 
 use crate::registry;
@@ -117,7 +117,7 @@ pub struct SearchArgs {
 }
 
 /// Take the lowercase `target` to check if it contains the lowercase `inside` value.
-fn lowercase_contains(inside: &str) -> impl FnOnce(&String,) -> bool {
+fn lowercase_contains(inside: &str) -> impl FnOnce(&String) -> bool {
     let inside_lowercase = inside.to_lowercase();
     move |target| target.to_lowercase().contains(inside_lowercase.as_str())
 }
@@ -132,7 +132,9 @@ impl SearchMatcher for registry::Feature {
             SearchFields::Id => lowercase_contains(value)(&self.id),
             SearchFields::Name => lowercase_contains(value)(&self.name),
             SearchFields::Description => self.description.as_ref().is_some_and(lowercase_contains(value)),
-            SearchFields::Keywords => self.keywords.as_ref().is_some_and(|keywords| keywords.contains(&String::from(value))),
+            SearchFields::Keywords => {
+                (self.keywords.as_ref()).is_some_and(|keywords| keywords.contains(&String::from(value)))
+            },
         }
     }
 }
@@ -143,7 +145,9 @@ impl SearchMatcher for registry::Template {
             SearchFields::Id => lowercase_contains(value)(&self.id),
             SearchFields::Name => lowercase_contains(value)(&self.name),
             SearchFields::Description => self.description.as_ref().is_some_and(lowercase_contains(value)),
-            SearchFields::Keywords => self.keywords.as_ref().is_some_and(|keywords| keywords.contains(&String::from(value))),
+            SearchFields::Keywords => {
+                (self.keywords.as_ref()).is_some_and(|keywords| keywords.contains(&String::from(value)))
+            },
         }
     }
 }
@@ -160,32 +164,39 @@ pub fn search(
         display_as,
         fields,
         include_deprecated,
-    }: SearchArgs
+    }: SearchArgs,
 ) -> Result<(), Box<dyn Error>> {
     log::debug!("search");
 
-    let search_fields = fields.unwrap_or_else(|| vec![SearchFields::Id, SearchFields::Name, SearchFields::Description]);
+    let search_fields =
+        fields.unwrap_or_else(|| vec![SearchFields::Id, SearchFields::Name, SearchFields::Description]);
     log::debug!("search: search_fields = {:?}", &search_fields);
     let results: Vec<SearchResult> = match collection {
         CollectionCategory::Features => {
             log::debug!("search: features");
-            index.iter_features(include_deprecated)
-            .filter_map(|feature| if search_match(feature, &text, &search_fields) {
-                Some(SearchResult::from(feature))
-            } else {
-                None
-            })
-            .collect()
+            index
+                .iter_features(include_deprecated)
+                .filter_map(|feature| {
+                    if search_match(feature, &text, &search_fields) {
+                        Some(SearchResult::from(feature))
+                    } else {
+                        None
+                    }
+                })
+                .collect()
         },
         CollectionCategory::Templates => {
             log::debug!("search: templates");
-            index.iter_templates(include_deprecated)
-            .filter_map(|template| if search_match(template, &text, &search_fields) {
-                Some(SearchResult::from(template))
-            } else {
-                None
-            })
-            .collect()
+            index
+                .iter_templates(include_deprecated)
+                .filter_map(|template| {
+                    if search_match(template, &text, &search_fields) {
+                        Some(SearchResult::from(template))
+                    } else {
+                        None
+                    }
+                })
+                .collect()
         },
     };
 
@@ -197,15 +208,16 @@ pub fn search(
             table.column(1).set_header("Version");
             table.column(2).set_header("Name");
             // table.column(3).set_header("Description");
-            let data: Vec<[&str; 3]> =
-                results
+            let data: Vec<[&str; 3]> = results
                 .iter()
-                .map(|r| [
-                    r.id.as_str(),
-                    r.version.as_str(),
-                    r.name.as_str(),
-                    // r.description.as_ref().and_then(|d| d.lines().next()).unwrap_or_default()
-                ])
+                .map(|r| {
+                    [
+                        r.id.as_str(),
+                        r.version.as_str(),
+                        r.name.as_str(),
+                        // r.description.as_ref().and_then(|d| d.lines().next()).unwrap_or_default()
+                    ]
+                })
                 .collect();
             table.print(data);
         },

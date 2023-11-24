@@ -1,5 +1,5 @@
-use std::fmt::{self, Display};
 use std::error::Error;
+use std::fmt::{self, Display};
 use std::io::{self, Read, Write};
 
 use ascii_table::{Align, AsciiTable};
@@ -29,7 +29,7 @@ impl Display for InspectDisplay {
             Self::Table => write!(f, "table"),
             Self::Json => write!(f, "json"),
             Self::None => write!(f, "none"),
-        }        
+        }
     }
 }
 
@@ -98,10 +98,10 @@ impl Displayable for registry::Collection {
     fn display_table(&self) {
         let mut table = AsciiTable::default();
         let data = [
-            [         "Name", self.source_information.name.as_ref()],
-            [   "Maintainer", self.source_information.maintainer.as_ref()],
-            [      "Contact", self.source_information.contact.as_ref()],
-            [   "Repository", self.source_information.repository.as_ref()],
+            ["Name", self.source_information.name.as_ref()],
+            ["Maintainer", self.source_information.maintainer.as_ref()],
+            ["Contact", self.source_information.contact.as_ref()],
+            ["Repository", self.source_information.repository.as_ref()],
             ["OCI Reference", self.source_information.oci_reference.as_ref()],
         ];
 
@@ -123,24 +123,31 @@ impl Displayable for registry::Feature {
         data.maybe_push("Documentation URL", self.documentation_url.as_ref());
         data.maybe_push("License URL", self.license_url.as_ref());
         data.maybe_push("Keywords", self.keywords.as_ref().map(comma_join));
-        data.many_push("Options", self.options.as_ref().map(|options| {
-            options.iter()
-            .map(|(key, value)| format!("name={key}, {value}"))
-            .collect::<Vec<String>>()
-        }));
-        data.many_push("Container ENV", self.container_env.as_ref().map(|container_env| {
-            container_env.iter()
-            .map(|(key, value)| format!("{key}={value}"))
-            .collect::<Vec<String>>()
-        }));
+        data.many_push(
+            "Options",
+            self.options.as_ref().map(|options| {
+                options
+                    .iter()
+                    .map(|(key, value)| format!("name={key}, {value}"))
+                    .collect::<Vec<String>>()
+            }),
+        );
+        data.many_push(
+            "Container ENV",
+            self.container_env.as_ref().map(|container_env| {
+                container_env
+                    .iter()
+                    .map(|(key, value)| format!("{key}={value}"))
+                    .collect::<Vec<String>>()
+            }),
+        );
         data.maybe_push("Privileged", self.privileged);
         data.maybe_push("Init", self.init);
         data.maybe_push("Cap Add", self.cap_add.as_ref().map(comma_join));
         data.maybe_push("Security Opt", self.security_opt.as_ref().map(comma_join));
         data.maybe_push("Entrypoint", self.entrypoint.as_ref());
 
-        let vscode_extensions =
-            self.customizations.as_ref()
+        let vscode_extensions = (self.customizations.as_ref())
             .and_then(|customizations| customizations.vscode_extensions())
             .as_ref()
             .map(comma_join);
@@ -176,11 +183,15 @@ impl Displayable for registry::Template {
         data.maybe_push("Description", self.description.as_ref());
         data.maybe_push("Documentation URL", self.documentation_url.as_ref());
         data.maybe_push("License URL", self.license_url.as_ref());
-        data.many_push("Options", self.options.as_ref().map(|options| {
-            options.iter()
-            .map(|(key, value)| format!("name={key}, {value}"))
-            .collect::<Vec<String>>()
-        }));
+        data.many_push(
+            "Options",
+            self.options.as_ref().map(|options| {
+                options
+                    .iter()
+                    .map(|(key, value)| format!("name={key}, {value}"))
+                    .collect::<Vec<String>>()
+            }),
+        );
         data.maybe_push("Platforms", self.platforms.as_ref().map(comma_join));
         data.maybe_push("Publisher", self.publisher.as_ref());
         data.maybe_push("Keywords", self.keywords.as_ref().map(comma_join));
@@ -252,7 +263,10 @@ fn display_install_sh(oci_ref: &OciReference) -> Result<(), Box<dyn Error>> {
         }
     }
 
-    Err(io::Error::new(io::ErrorKind::NotFound, "The install.sh script was not found in the archive"))?
+    Err(io::Error::new(
+        io::ErrorKind::NotFound,
+        "The install.sh script was not found in the archive",
+    ))?
 }
 
 pub fn inspect(
@@ -262,7 +276,7 @@ pub fn inspect(
         display_as,
         install_sh,
         show_files,
-    }: InspectArgs
+    }: InspectArgs,
 ) -> Result<(), Box<dyn Error>> {
     log::debug!("inspect");
 
@@ -311,7 +325,10 @@ pub fn inspect(
             Ok(())
         },
         (None, None, None) => Err(io::Error::new(io::ErrorKind::NotFound, "No match found for given id.")),
-        _ => Err(io::Error::new(io::ErrorKind::Unsupported, "Multiple results found for given id.")),
+        _ => Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "Multiple results found for given id.",
+        )),
     }?;
 
     log::debug!("inspect: done");

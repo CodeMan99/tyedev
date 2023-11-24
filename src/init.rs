@@ -9,10 +9,10 @@ use std::result::Result;
 use std::str::FromStr;
 
 use clap::Args;
-use inquire::{Autocomplete, CustomUserError, Confirm, Select, Text, autocompletion::Replacement};
+use inquire::{autocompletion::Replacement, Autocomplete, Confirm, CustomUserError, Select, Text};
 use regex::bytes::{Captures, Regex};
-use serde_json::{self, Value, Map};
-use tar::{self, Archive, Builder, Header, EntryType};
+use serde_json::{self, Map, Value};
+use tar::{self, Archive, Builder, EntryType, Header};
 
 use crate::oci_ref::OciReference;
 use crate::registry::{self, DevOption, StringDevOption};
@@ -48,11 +48,16 @@ pub struct InitArgs {
     workspace_folder: Option<PathBuf>,
 }
 
-fn get_feature(index: &registry::DevcontainerIndex, feature_ref: &OciReference) -> Result<registry::Feature, Box<dyn Error>> {
+fn get_feature(
+    index: &registry::DevcontainerIndex,
+    feature_ref: &OciReference,
+) -> Result<registry::Feature, Box<dyn Error>> {
     log::debug!("get_feature");
 
-    index.get_feature(&feature_ref.id())
-    .map_or_else(|| pull_feature_configuration(feature_ref), |feature| Ok(feature.clone()))
+    match index.get_feature(&feature_ref.id()) {
+        Some(feature) => Ok(feature.clone()),
+        None => pull_feature_configuration(feature_ref),
+    }
 }
 
 fn pull_feature_configuration(feature_ref: &OciReference) -> Result<registry::Feature, Box<dyn Error>> {
@@ -64,8 +69,9 @@ fn pull_feature_configuration(feature_ref: &OciReference) -> Result<registry::Fe
     for entry in entries {
         let mut entry = entry?;
         let filename = entry.path()?;
+        let filename = filename.to_str();
 
-        if filename.to_str().is_some_and(|p| p.ends_with("devcontainer-feature.json")) {
+        if filename.is_some_and(|p| p.ends_with("devcontainer-feature.json")) {
             let size = entry.size() as usize;
             let mut data: Vec<u8> = Vec::with_capacity(size);
             entry.read_to_end(&mut data)?;
@@ -73,11 +79,14 @@ fn pull_feature_configuration(feature_ref: &OciReference) -> Result<registry::Fe
 
             log::debug!("pull_feature_configuration: read {} bytes", size);
 
-            return Ok(feature)
+            return Ok(feature);
         }
     }
 
-    Err(io::Error::new(io::ErrorKind::NotFound, "No devcontainer-feature.json found in archive"))?
+    Err(io::Error::new(
+        io::ErrorKind::NotFound,
+        "No devcontainer-feature.json found in archive",
+    ))?
 }
 
 #[derive(Clone, Debug, PartialEq, Default)]
@@ -99,9 +108,15 @@ impl Autocomplete for DevOptionProposalsAutocomplete {
     fn get_suggestions(&mut self, input: &str) -> Result<Vec<String>, CustomUserError> {
         let DevOptionProposalsAutocomplete(proposals) = self;
         let input_lower = input.to_lowercase();
-        let suggestions =
-            proposals.iter()
-            .filter_map(|s| if s.to_lowercase().starts_with(&input_lower) { Some(s.clone()) } else { None })
+        let suggestions = proposals
+            .iter()
+            .filter_map(|s| {
+                if s.to_lowercase().starts_with(&input_lower) {
+                    Some(s.clone())
+                } else {
+                    None
+                }
+            })
             .collect();
         Ok(suggestions)
     }
@@ -157,18 +172,21 @@ impl<'t> DevOptionPrompt<'t> {
 
         match dev_option {
             DevOption::Boolean { description, .. } => {
-                let message = description.as_ref().map_or_else(|| format!("Include {}?", self.name), |s| s.clone());
+                let message = description
+                    .as_ref()
+                    .map_or_else(|| format!("Include {}?", self.name), |s| s.clone());
                 let default_value = bool::from_str(&default)?;
-                let result =
-                    Confirm::new(&message)
-                    .with_default(default_value)
-                    .prompt()?;
+                let result = Confirm::new(&message).with_default(default_value).prompt()?;
                 let value = DevOptionPromptValue::Boolean(result);
 
                 Ok(value)
             },
-            DevOption::String(StringDevOption::EnumValues { description, r#enum, .. }) => {
-                let message = description.as_ref().map_or_else(|| format!("Choose value for {}:", self.name), |s| s.clone());
+            DevOption::String(StringDevOption::EnumValues {
+                description, r#enum, ..
+            }) => {
+                let message = description
+                    .as_ref()
+                    .map_or_else(|| format!("Choose value for {}:", self.name), |s| s.clone());
                 let options = r#enum.iter().collect();
                 let start = r#enum.iter().position(|s| *s == default).unwrap_or_default();
                 let result = Select::new(&message, options).with_starting_cursor(start).prompt()?;
@@ -176,12 +194,18 @@ impl<'t> DevOptionPrompt<'t> {
 
                 Ok(value)
             },
-            DevOption::String(StringDevOption::Proposals { description, proposals, .. }) => {
-                let message = description.as_ref().map_or_else(|| format!("What value for {}?", self.name), |s| s.clone());
+            DevOption::String(StringDevOption::Proposals {
+                description, proposals, ..
+            }) => {
+                let message = description
+                    .as_ref()
+                    .map_or_else(|| format!("What value for {}?", self.name), |s| s.clone());
                 let text_prompt = if let Some(values) = proposals.as_ref().filter(|&p| !p.is_empty()) {
                     let autocomplete = DevOptionProposalsAutocomplete::new(&default, values);
 
-                    Text::new(&message).with_default(&default).with_autocomplete(autocomplete)
+                    Text::new(&message)
+                        .with_default(&default)
+                        .with_autocomplete(autocomplete)
                 } else {
                     Text::new(&message).with_default(&default)
                 };
@@ -199,8 +223,8 @@ struct FeaturesAutocomplete(Vec<String>);
 
 impl FeaturesAutocomplete {
     fn new(index: &registry::DevcontainerIndex, include_deprecated: bool) -> Self {
-        let inner =
-            index.iter_features(include_deprecated)
+        let inner = index
+            .iter_features(include_deprecated)
             .map(|feature| feature.id.clone())
             .collect();
         FeaturesAutocomplete(inner)
@@ -210,9 +234,15 @@ impl FeaturesAutocomplete {
 impl inquire::Autocomplete for FeaturesAutocomplete {
     fn get_suggestions(&mut self, input: &str) -> Result<Vec<String>, inquire::CustomUserError> {
         let FeaturesAutocomplete(proposals) = self;
-        let suggestions =
-            proposals.iter()
-            .filter_map(|feature_id| if feature_id.contains(input) { Some(feature_id.clone()) } else { None })
+        let suggestions = proposals
+            .iter()
+            .filter_map(|feature_id| {
+                if feature_id.contains(input) {
+                    Some(feature_id.clone())
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<String>>();
         Ok(suggestions)
     }
@@ -346,12 +376,18 @@ impl TemplateBuilder {
             }
         }
 
-        Err(io::Error::new(io::ErrorKind::NotFound, "The devcontainer-template.json file was not found in the archive"))?
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "The devcontainer-template.json file was not found in the archive",
+        ))?
     }
 
     fn use_prompt_values(&mut self) -> Result<(), Box<dyn Error>> {
         log::debug!("TemplateBuilder::use_prompt_values");
-        let config = self.config.as_ref().ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Missing configuration"))?;
+        let config = self
+            .config
+            .as_ref()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Missing configuration"))?;
 
         if let Some(options) = &config.options {
             self.context.clear();
@@ -368,11 +404,14 @@ impl TemplateBuilder {
 
     fn use_default_values(&mut self) -> Result<(), Box<dyn Error>> {
         log::debug!("TemplateBuilder::use_default_values");
-        let config = self.config.as_ref().ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Missing configuration"))?;
+        let config = self
+            .config
+            .as_ref()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Missing configuration"))?;
 
         if let Some(options) = &config.options {
-            let all_defaults =
-                options.iter()
+            let all_defaults = options
+                .iter()
                 .map(|(name, template_option)| (name.clone(), template_option.configured_default()))
                 .collect::<HashMap<String, String>>();
 
@@ -388,7 +427,9 @@ impl TemplateBuilder {
             if let Some(template_type) = template.r#type.as_ref() {
                 return match template_type {
                     registry::TemplateType::DockerCompose => {
-                        log::warn!("Skipping --attempt-single-file as the selected template includes a docker-compose.yml");
+                        log::warn!(
+                            "Skipping --attempt-single-file as the selected template includes a docker-compose.yml"
+                        );
                         false
                     },
                     registry::TemplateType::Dockerfile => {
@@ -401,14 +442,18 @@ impl TemplateBuilder {
                         false
                     },
                     registry::TemplateType::Image => true,
-                }
+                };
             }
         }
 
         false
     }
 
-    fn apply_context_and_features(&mut self, attempt_single_file: bool, workspace: &Path) -> Result<(), Box<dyn Error>> {
+    fn apply_context_and_features(
+        &mut self,
+        attempt_single_file: bool,
+        workspace: &Path,
+    ) -> Result<(), Box<dyn Error>> {
         log::debug!("TemplateBuilder::apply_context_and_features");
         let template_option_re = Regex::new(r"\$\{templateOption:\s*(?<name>\w+)\s*\}")?;
         let apply_context = |captures: &Captures| -> &[u8] {
@@ -416,22 +461,22 @@ impl TemplateBuilder {
             let name = std::str::from_utf8(name).ok();
             match name.and_then(|key| self.context.get(key)) {
                 Some(value) => {
-                    log::debug!("TemplateBuilder::apply_context_and_features: Replacing ${{templateOption:{}}} with \"{}\"", name.unwrap_or_default(), value);
+                    log::debug!(
+                        "TemplateBuilder::apply_context_and_features: Replacing ${{templateOption:{}}} with \"{}\"",
+                        name.unwrap_or_default(),
+                        value
+                    );
                     value.as_bytes()
                 },
                 None => {
                     log::warn!("No value provided for ${{templateOption:{}}}", name.unwrap_or_default());
                     b""
-                }
+                },
             }
         };
         let mut archive = self.as_archive();
         let entries = archive.entries()?;
-        let template_skip = [
-            "NOTES.md",
-            "README.md",
-            "devcontainer-template.json",
-        ];
+        let template_skip = ["NOTES.md", "README.md", "devcontainer-template.json"];
 
         for entry in entries {
             let mut entry = entry?;
@@ -439,7 +484,10 @@ impl TemplateBuilder {
             let mut filename = workspace.join(relative_path).canonicalize()?;
 
             if template_skip.iter().any(|&name| filename.ends_with(name)) {
-                log::debug!("TemplateBuilder::apply_context_and_features: Skipping template file: {}", filename.display());
+                log::debug!(
+                    "TemplateBuilder::apply_context_and_features: Skipping template file: {}",
+                    filename.display()
+                );
                 continue;
             }
 
@@ -456,8 +504,10 @@ impl TemplateBuilder {
                     entry.read_to_end(&mut bytes)?;
 
                     let with_context = template_option_re.replace_all(bytes.as_mut_slice(), apply_context);
+                    let dc_filename1 = ".devcontainer/devcontainer.json";
+                    let dc_filename2 = ".devcontainer.json";
 
-                    if filename.ends_with(".devcontainer/devcontainer.json") || filename.ends_with(".devcontainer.json") {
+                    if filename.ends_with(dc_filename1) || filename.ends_with(dc_filename2) {
                         if attempt_single_file && self.is_single_file_eligible() {
                             filename = workspace.join(".devcontainer.json").canonicalize()?;
                         }
@@ -466,7 +516,9 @@ impl TemplateBuilder {
                             let mut bytes: Vec<u8> = Vec::new();
                             bytes.write_all(&with_context)?;
                             let mut value: Value = serde_jsonc::from_slice(bytes.as_slice())?;
-                            let devcontainer = value.as_object_mut().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Format of devcontainer.json is invalid"))?;
+                            let devcontainer = value.as_object_mut().ok_or_else(|| {
+                                io::Error::new(io::ErrorKind::InvalidData, "Format of devcontainer.json is invalid")
+                            })?;
                             match devcontainer.get_mut("features").and_then(|f| f.as_object_mut()) {
                                 Some(features) => features.extend(self.features.features.clone()),
                                 None => {
@@ -524,9 +576,7 @@ impl TemplateBuilder {
         let tar_chunks = 7;
         let mut builder = Builder::new(Vec::with_capacity(tar_blocksize * tar_chunks));
         let mtime = {
-            let unix_time =
-                std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)?;
+            let unix_time = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?;
             unix_time.as_secs()
         };
 
@@ -558,15 +608,24 @@ impl TemplateBuilder {
 
         let dot_devcontainer_json: &[u8] = b"{\n\t\"name\": \"tyedev default\",\n\t\"image\": \"mcr.microsoft.com/devcontainers/base:${templateOption:imageVariant}\"\n}\n";
         let mut header_devcontainer_json = create_file_header(dot_devcontainer_json.len() as u64);
-        builder.append_data(&mut header_devcontainer_json, ".devcontainer/devcontainer.json", dot_devcontainer_json)?;
+        builder.append_data(
+            &mut header_devcontainer_json,
+            ".devcontainer/devcontainer.json",
+            dot_devcontainer_json,
+        )?;
 
         let devcontainer_template_json = serde_json::to_string_pretty(&template_value)?;
         let mut header_template_json = create_file_header(devcontainer_template_json.len() as u64);
-        builder.append_data(&mut header_template_json, "devcontainer-template.json", devcontainer_template_json.as_bytes())?;
+        builder.append_data(
+            &mut header_template_json,
+            "devcontainer-template.json",
+            devcontainer_template_json.as_bytes(),
+        )?;
 
         let archive_bytes = builder.into_inner()?;
 
-        #[cfg(test)] {
+        #[cfg(test)]
+        {
             let tmp = env::temp_dir();
             let mut file = File::create(tmp.join("devcontainer-template-tyedev-default.tar"))?;
             file.write_all(&archive_bytes)?;
@@ -584,9 +643,9 @@ impl TemplateBuilder {
 }
 
 mod serde_json_pretty {
-    use std::io::Write;
-    use serde_json::{error::Result, ser::PrettyFormatter, Serializer};
     use serde::Serialize;
+    use serde_json::{error::Result, ser::PrettyFormatter, Serializer};
+    use std::io::Write;
 
     /// This is the same as `serde_json::to_writer_pretty` except with use of tabs for indentation.
     pub fn to_writer_with_tabs<W: Write, V: ?Sized + Serialize>(writer: W, value: &V) -> Result<()> {
@@ -636,8 +695,8 @@ pub fn init(
         template_id,
         include_features,
         include_deprecated,
-        workspace_folder
-    }: InitArgs
+        workspace_folder,
+    }: InitArgs,
 ) -> Result<(), Box<dyn Error>> {
     log::debug!("init");
     // Do this evaluation of the `env` first so that it can error early.
@@ -667,20 +726,29 @@ pub fn init(
 
             TemplateBuilder::new(template_ref, template.cloned())?
         },
-        None if non_interactive => {
-            Err(io::Error::new(io::ErrorKind::InvalidInput, "Must provide --template-id in non-interactive mode"))?
-        },
+        None if non_interactive => Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Must provide --template-id in non-interactive mode",
+        ))?,
         None => {
-            let start_point = inquire::Select::new("Choose a starting point:", vec![
-                PromptEntryAction::Existing,
-                PromptEntryAction::Enter,
-                PromptEntryAction::Empty,
-            ]).prompt()?;
+            let start_point = inquire::Select::new(
+                "Choose a starting point:",
+                vec![
+                    PromptEntryAction::Existing,
+                    PromptEntryAction::Enter,
+                    PromptEntryAction::Empty,
+                ],
+            )
+            .prompt()?;
 
             match start_point {
                 PromptEntryAction::Existing => {
-                    let template_ids = index.iter_templates(include_deprecated).map(|template| template.id.clone()).collect();
-                    let template_id = inquire::Select::new("Pick existing template from the index:", template_ids).prompt()?;
+                    let template_ids = index
+                        .iter_templates(include_deprecated)
+                        .map(|template| template.id.clone())
+                        .collect();
+                    let template_id =
+                        inquire::Select::new("Pick existing template from the index:", template_ids).prompt()?;
                     let template_ref = template_id.parse()?;
                     let template = index.get_template(&template_id);
                     TemplateBuilder::new(&template_ref, template.cloned())?
@@ -696,7 +764,11 @@ pub fn init(
         },
     };
 
-    if template_id.as_ref().is_some_and(|oci_ref| oci_ref.tag_name() != "latest") || template_builder.config.is_none() {
+    let is_version_tag = template_id
+        .as_ref()
+        .is_some_and(|oci_ref| oci_ref.tag_name() != "latest");
+
+    if is_version_tag || template_builder.config.is_none() {
         template_builder.replace_config()?;
     }
 
@@ -721,14 +793,12 @@ pub fn init(
             }
         }
 
-
         loop {
             let next = inquire::Confirm::new("Add a feature?").prompt()?;
 
             if next {
                 let features_autocomplete = FeaturesAutocomplete::new(index, include_deprecated);
-                let input =
-                    inquire::Text::new("Choose or enter feature id (OCI REF):")
+                let input = inquire::Text::new("Choose or enter feature id (OCI REF):")
                     .with_autocomplete(features_autocomplete)
                     .prompt()?;
                 let feature_ref: OciReference = input.parse()?;
@@ -750,16 +820,21 @@ pub fn init(
 // TODO these are more *proof of concept* than actual tests...
 #[cfg(test)]
 mod tests {
-    use std::error::Error;
-    use serde_json::{self, Value, Map};
     use super::{FeatureEntryBuilder, TemplateBuilder};
+    use serde_json::{self, Map, Value};
+    use std::error::Error;
 
     #[test]
     fn test_feature_entry_builder_as_value() -> Result<(), Box<dyn Error>> {
         let mut feature_entry_builder = FeatureEntryBuilder::default();
 
-        feature_entry_builder.features.insert("ghcr.io/devcontainers/git:1".to_owned(), Value::Object(Map::default()));
-        feature_entry_builder.features.insert("ghcr.io/devcontainers/docker-in-docker:2".to_owned(), serde_json::json!({"moby": false}));
+        let git_id = "ghcr.io/devcontainers/git:1";
+        let git_options = Value::Object(Map::default());
+        feature_entry_builder.features.insert(git_id.to_owned(), git_options);
+
+        let dind_id = "ghcr.io/devcontainers/docker-in-docker:2";
+        let dind_options = serde_json::json!({"moby": false});
+        feature_entry_builder.features.insert(dind_id.to_owned(), dind_options);
 
         let value = feature_entry_builder.as_value()?;
         let json_str = serde_json::to_string_pretty(&value)?;

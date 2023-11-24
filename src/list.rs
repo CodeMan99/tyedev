@@ -27,10 +27,12 @@ fn collection_templates_and_features(oci_reference: &str, collection: &Collectio
         let templates = collection.templates.iter().map(search::SearchResult::from);
         features.chain(templates)
     };
-    let data: Vec<[String; 5]> =
-        search_results.enumerate().map(|(i, r)| {
-            let description =
-                r.description.as_ref()
+    let data: Vec<[String; 5]> = search_results
+        .enumerate()
+        .map(|(i, r)| {
+            let description = r
+                .description
+                .as_ref()
                 .and_then(|d| d.lines().next())
                 .unwrap_or_default();
             [
@@ -63,15 +65,17 @@ fn overview_collections(index: &DevcontainerIndex) {
     table.column(2).set_header("Features").set_align(Align::Right);
     table.column(3).set_header("Templates").set_align(Align::Right);
 
-    let result: Vec<[String; 4]> =
-        index.collections()
+    let result: Vec<[String; 4]> = index
+        .collections()
         .iter()
-        .map(|collection| [
-            collection.source_information.name.to_string(),
-            collection.source_information.oci_reference.to_string(),
-            format!("{}", collection.features.len()),
-            format!("{}", collection.templates.len()),
-        ])
+        .map(|collection| {
+            [
+                collection.source_information.name.to_string(),
+                collection.source_information.oci_reference.to_string(),
+                format!("{}", collection.features.len()),
+                format!("{}", collection.templates.len()),
+            ]
+        })
         .collect();
 
     table.print(result);
@@ -81,11 +85,9 @@ pub fn list(index: &DevcontainerIndex, ListArgs { collection_id }: ListArgs) {
     log::debug!("list");
 
     match collection_id {
-        Some(oci_reference) => {
-            match index.get_collection(&oci_reference) {
-                Some(collection) => collection_templates_and_features(&oci_reference, collection),
-                None => println!("No collection found by the given OCI Reference: {}", oci_reference),
-            }
+        Some(oci_reference) => match index.get_collection(&oci_reference) {
+            Some(collection) => collection_templates_and_features(&oci_reference, collection),
+            None => println!("No collection found by the given OCI Reference: {}", oci_reference),
         },
         None => overview_collections(index),
     }

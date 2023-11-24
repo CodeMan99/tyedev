@@ -1,13 +1,13 @@
+use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::fs::{self, File};
 use std::io::{Error, ErrorKind, Write};
-use std::collections::HashMap;
 use std::path::Path;
 
 use oci_spec::image::MediaType;
-use ocipkg::{Digest, ImageName, distribution::Client};
-use serde_json::Value as JsonValue;
+use ocipkg::{distribution::Client, Digest, ImageName};
 use serde::{Deserialize, Serialize};
+use serde_json::Value as JsonValue;
 
 use crate::oci_ref::OciReference;
 
@@ -38,7 +38,11 @@ pub struct DockerMount {
 
 impl Display for DockerMount {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "source={}, target={}, type={}", self.source, self.target, self.r#type)
+        write!(
+            f,
+            "source={}, target={}, type={}",
+            self.source, self.target, self.r#type
+        )
     }
 }
 
@@ -62,14 +66,14 @@ impl Display for LifecycleHook {
             LifecycleHook::Single(value) => write!(f, "{value}"),
             LifecycleHook::Multiple(values) => write!(f, "{}", values.join(", ")),
             LifecycleHook::Named(values) => {
-                values.iter()
-                .enumerate()
-                .fold(Ok(()), |r, (index, (key, value))| {
+                values.iter().enumerate().fold(Ok(()), |r, (index, (key, value))| {
                     r.and_then(|_| {
                         let join = if index == 0 { "" } else { "; " };
                         match value.as_ref() {
                             LifecycleHook::Single(v) => write!(f, "{join}{key}={v}"),
-                            LifecycleHook::Multiple(vs) => write!(f, "{join}{key}={}", vs.join(", ")),
+                            LifecycleHook::Multiple(vs) => {
+                                write!(f, "{join}{key}={}", vs.join(", "))
+                            },
                             // Only a single level of nesting makes sense.
                             LifecycleHook::Named(_) => Err(fmt::Error),
                         }
@@ -127,7 +131,11 @@ pub enum StringDevOption {
 impl Display for StringDevOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            StringDevOption::EnumValues { default, description, r#enum } => {
+            StringDevOption::EnumValues {
+                default,
+                description,
+                r#enum,
+            } => {
                 write!(
                     f,
                     "type=string, default={}, enum=[{}], description={}",
@@ -136,7 +144,11 @@ impl Display for StringDevOption {
                     description.as_ref().cloned().unwrap_or_default(),
                 )
             },
-            StringDevOption::Proposals { default, description, proposals: Some(proposals) } => {
+            StringDevOption::Proposals {
+                default,
+                description,
+                proposals: Some(proposals),
+            } => {
                 write!(
                     f,
                     "type=string, default={}, proposals=[{}], description={}",
@@ -145,14 +157,18 @@ impl Display for StringDevOption {
                     description.as_ref().cloned().unwrap_or_default(),
                 )
             },
-            StringDevOption::Proposals { default, description, proposals: None } => {
+            StringDevOption::Proposals {
+                default,
+                description,
+                proposals: None,
+            } => {
                 write!(
                     f,
                     "type=string, default={}, description={}",
                     default.as_ref().cloned().unwrap_or_default(),
                     description.as_ref().cloned().unwrap_or_default(),
                 )
-            }
+            },
         }
     }
 }
@@ -165,16 +181,20 @@ pub enum DevOption {
         #[serde(skip_serializing_if = "Option::is_none")]
         description: Option<String>,
     },
-    String (StringDevOption),
+    String(StringDevOption),
 }
 
 impl Display for DevOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DevOption::Boolean { default, description } => {
-                write!(f, "type=boolean, default={default}, description={}", description.as_ref().cloned().unwrap_or_default())
+                write!(
+                    f,
+                    "type=boolean, default={default}, description={}",
+                    description.as_ref().cloned().unwrap_or_default()
+                )
             },
-            DevOption::String (option) => write!(f, "{option}"),
+            DevOption::String(option) => write!(f, "{option}"),
         }
     }
 }
@@ -191,24 +211,18 @@ impl Default for DevOption {
 impl DevOption {
     pub fn configured_default(&self) -> String {
         match self {
-            DevOption::Boolean { default, .. } => {
-                match default {
-                    BooleanDefaultType::String(s) => s.clone(),
-                    BooleanDefaultType::Boolean(b) => b.to_string(),
-                }
+            DevOption::Boolean { default, .. } => match default {
+                BooleanDefaultType::String(s) => s.clone(),
+                BooleanDefaultType::Boolean(b) => b.to_string(),
             },
             DevOption::String(StringDevOption::Proposals { default, proposals, .. }) => {
                 // Reminder that `default` is not actually optional. This is just covering mistakes from collection maintainers.
-                default.clone()
-                .or_else(||
-                    proposals.as_ref()
-                    .and_then(|p| p.first().cloned())
-                )
-                .unwrap_or_default()
+                default
+                    .clone()
+                    .or_else(|| proposals.as_ref().and_then(|p| p.first().cloned()))
+                    .unwrap_or_default()
             },
-            DevOption::String(StringDevOption::EnumValues { default, .. }) => {
-                default.clone()
-            },
+            DevOption::String(StringDevOption::EnumValues { default, .. }) => default.clone(),
         }
     }
 }
@@ -218,21 +232,20 @@ pub struct Customizations(serde_json::Value);
 
 impl Customizations {
     fn vscode_extensions_value(&self) -> Option<&Vec<JsonValue>> {
-        self.0.as_object()
-        .and_then(|customizations| customizations.get("vscode"))
-        .and_then(|vscode_value| vscode_value.as_object())
-        .and_then(|vscode| vscode.get("extensions"))
-        .and_then(|extensions_value| extensions_value.as_array())
+        self.0
+            .as_object()
+            .and_then(|customizations| customizations.get("vscode"))
+            .and_then(|vscode_value| vscode_value.as_object())
+            .and_then(|vscode| vscode.get("extensions"))
+            .and_then(|extensions_value| extensions_value.as_array())
     }
 
     pub fn vscode_extensions(&self) -> Option<Vec<String>> {
         self.vscode_extensions_value().map(|extensions| {
-            extensions.iter()
-            .filter_map(|value| {
-                value.as_str()
-                .map(|extension_id| extension_id.to_string())
-            })
-            .collect()
+            extensions
+                .iter()
+                .filter_map(|value| value.as_str().map(|extension_id| extension_id.to_string()))
+                .collect()
         })
     }
 }
@@ -357,8 +370,8 @@ impl DevcontainerIndex {
 
     pub fn get_collection(&self, oci_reference: &str) -> Option<&Collection> {
         self.collections
-        .iter()
-        .find(|&collection| collection.source_information.oci_reference == oci_reference)
+            .iter()
+            .find(|&collection| collection.source_information.oci_reference == oci_reference)
     }
 
     pub fn iter_features(&self, include_deprecated: bool) -> impl Iterator<Item = &Feature> {
@@ -366,30 +379,34 @@ impl DevcontainerIndex {
         let not_deprecated = |&feature: &&Feature| feature.deprecated.map(|d| !d).unwrap_or(true);
 
         self.collections
-        .iter()
-        .flat_map(|collection| collection.features.iter())
-        .filter(if include_deprecated { all } else { not_deprecated })
+            .iter()
+            .flat_map(|collection| collection.features.iter())
+            .filter(if include_deprecated { all } else { not_deprecated })
     }
 
     pub fn get_feature(&self, feature_id: &str) -> Option<&Feature> {
-        self.iter_features(true)
-        .find(|&feature| feature.id == feature_id)
+        self.iter_features(true).find(|&feature| feature.id == feature_id)
     }
 
     pub fn iter_templates(&self, include_deprecated: bool) -> impl Iterator<Item = &Template> {
         let all = |_: &&Collection| true;
         // There is one known collection that is deprecated, which is marked in the "maintainer" field.
-        let not_deprecated = |&collection: &&Collection| !collection.source_information.maintainer.to_lowercase().contains("deprecated");
+        let not_deprecated = |&collection: &&Collection| {
+            !collection
+                .source_information
+                .maintainer
+                .to_lowercase()
+                .contains("deprecated")
+        };
 
         self.collections
-        .iter()
-        .filter(if include_deprecated { all } else { not_deprecated })
-        .flat_map(|collection| collection.templates.iter())
+            .iter()
+            .filter(if include_deprecated { all } else { not_deprecated })
+            .flat_map(|collection| collection.templates.iter())
     }
 
     pub fn get_template(&self, template_id: &str) -> Option<&Template> {
-        self.iter_templates(true)
-        .find(|&template| template.id == template_id)
+        self.iter_templates(true).find(|&template| template.id == template_id)
     }
 }
 
@@ -397,8 +414,8 @@ fn get_layer_bytes(image_name: &ImageName, f: impl Fn(&MediaType) -> bool) -> oc
     let registry_url = image_name.registry_url()?;
     let mut client = Client::new(registry_url, image_name.name.clone())?;
     let manifest = client.get_manifest(&image_name.reference)?;
-    let layer =
-        manifest.layers()
+    let layer = manifest
+        .layers()
         .iter()
         .find(|&d| f(d.media_type()))
         .ok_or(ocipkg::error::Error::MissingLayer)?;
@@ -412,11 +429,9 @@ pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> ocipkg::error::Re
     log::debug!("pull_devcontainer_index");
 
     let image_name = ImageName::parse("ghcr.io/devcontainers/index:latest")?;
-    let blob = get_layer_bytes(&image_name, |media_type| {
-        match media_type {
-            MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.index.layer.v1+json",
-            _ => false,
-        }
+    let blob = get_layer_bytes(&image_name, |media_type| match media_type {
+        MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.index.layer.v1+json",
+        _ => false,
     })?;
     let mut file = File::create(filename)?;
 
@@ -432,11 +447,9 @@ pub fn pull_archive_bytes(oci_ref: &OciReference) -> ocipkg::error::Result<Vec<u
     log::debug!("pull_archive_bytes");
 
     let OciReference(image_name) = oci_ref;
-    let blob = get_layer_bytes(image_name, |media_type| {
-        match media_type {
-            MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.layer.v1+tar",
-            _ => false,
-        }
+    let blob = get_layer_bytes(image_name, |media_type| match media_type {
+        MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.layer.v1+tar",
+        _ => false,
     })?;
 
     log::debug!("pull_archive_bytes: Pulled {} bytes for {}", blob.len(), &image_name);
@@ -452,16 +465,14 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
     let json_value: JsonValue = serde_json::from_str(&file)?;
     let mut features_count = 0;
     let mut templates_count = 0;
-    let collections: Vec<Collection> =
-        json_value
+    let collections: Vec<Collection> = json_value
         .as_object()
         .and_then(|obj_map| obj_map.get("collections"))
         .and_then(|collections_value| collections_value.as_array())
         .map_or_else(
             || Err(Error::new(ErrorKind::InvalidData, "Unexpected json shape")),
             |arr| {
-                let parsed =
-                    arr
+                let parsed = arr
                     .iter()
                     // TODO: Skip errors of a single feature or template, not the entire collection
                     .filter_map(|value| {
@@ -481,10 +492,15 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
                     .collect();
 
                 Ok(parsed)
-            }
+            },
         )?;
 
-    log::debug!("read_devcontainer_index: Loaded {} collections, {} features, {} templates", collections.len(), features_count, templates_count);
+    log::debug!(
+        "read_devcontainer_index: Loaded {} collections, {} features, {} templates",
+        collections.len(),
+        features_count,
+        templates_count
+    );
 
     Ok(DevcontainerIndex { collections })
 }

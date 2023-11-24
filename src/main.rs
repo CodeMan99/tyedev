@@ -41,23 +41,22 @@ enum Commands {
     #[cfg(feature = "completions")]
     Completions { shell: Shell },
     /// Create new devcontainer.
-    Init (init::InitArgs),
+    Init(init::InitArgs),
     /// Display details of a specific feature, template, or collection.
-    Inspect (inspect::InspectArgs),
+    Inspect(inspect::InspectArgs),
     /// Overview of collections.
-    List (list::ListArgs),
+    List(list::ListArgs),
     /// Text search the `id`, `keywords`, and `description` fields of templates or features.
-    Search (search::SearchArgs),
+    Search(search::SearchArgs),
 }
 
 fn program_name() -> io::Result<String> {
     log::debug!("program_name");
     let exe = env::current_exe()?;
-    exe
-    .file_name()
-    .and_then(OsStr::to_str)
-    .map(String::from)
-    .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Executable not a file path"))
+    exe.file_name()
+        .and_then(OsStr::to_str)
+        .map(String::from)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Executable not a file path"))
 }
 
 fn data_directory<P: AsRef<Path>>(namespace: P) -> io::Result<PathBuf> {
@@ -65,7 +64,10 @@ fn data_directory<P: AsRef<Path>>(namespace: P) -> io::Result<PathBuf> {
     if let Some(path) = dirs::data_dir() {
         Ok(path.join(namespace))
     } else {
-        Err(io::Error::new(io::ErrorKind::InvalidData, "Unable to determine a valid data directory"))
+        Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Unable to determine a valid data directory",
+        ))
     }
 }
 
@@ -73,9 +75,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
     env_logger::Builder::new()
-    .filter_level(args.verbose.log_level_filter())
-    .format_timestamp_millis()
-    .init();
+        .filter_level(args.verbose.log_level_filter())
+        .format_timestamp_millis()
+        .init();
 
     let prog_name = program_name()?;
     let data_dir = data_directory(&prog_name)?;
@@ -94,7 +96,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     if let Some(command) = args.command {
         if !index_file.exists() {
             // suggested user action
-            log::error!("Missing devcontainer-index.json.\n\n\tRun `{} --pull-index`.\n", prog_name);
+            log::error!(
+                "Missing devcontainer-index.json.\n\n\tRun `{} --pull-index`.\n",
+                prog_name
+            );
         }
 
         let index = registry::read_devcontainer_index(index_file)?;
@@ -104,10 +109,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             Commands::Completions { shell } => {
                 generate(shell, &mut Args::command_for_update(), &prog_name, &mut io::stdout());
             },
-            Commands::Init (args) => init::init(&index, args)?,
-            Commands::Inspect (args) => inspect::inspect(&index, args)?,
-            Commands::List (args) => list::list(&index, args),
-            Commands::Search (args) => search::search(&index, args)?,
+            Commands::Init(args) => init::init(&index, args)?,
+            Commands::Inspect(args) => inspect::inspect(&index, args)?,
+            Commands::List(args) => list::list(&index, args),
+            Commands::Search(args) => search::search(&index, args)?,
         };
     }
 
