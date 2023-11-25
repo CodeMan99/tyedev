@@ -1,78 +1,77 @@
 name: Release
 
 on:
-    push:
-        tags:
-            - 'v*.*.*'
-    workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
 
 # permissions:
 #     contents: write
 
 jobs:
-    build:
-        name: Building for ${{ matrix.config.os }}
-        runs-on: ${{ matrix.config.os }}
+  build:
+    name: Building for ${{ matrix.config.os }}
+    runs-on: ${{ matrix.config.os }}
 
-        strategy:
-            fail-fast: false
-            matrix:
-                config:
-                    - os: ubuntu-latest
-                      rust_target: x86_64-unknown-linux-gnu
-                      ext: ''
-                    - os: macos-latest
-                      rust_target: x86_64-apple-darwin
-                      ext: ''
-                    - os: macos-latest
-                      rust_target: aarch64-apple-darwin
-                      ext: ''
-                    - os: windows-latest
-                      rust_target: x86_64-pc-windows-msvc
-                      ext: '.exe'
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - os: ubuntu-latest
+            rust_target: x86_64-unknown-linux-gnu
+            ext: ""
+          - os: macos-latest
+            rust_target: x86_64-apple-darwin
+            ext: ""
+          - os: macos-latest
+            rust_target: aarch64-apple-darwin
+            ext: ""
+          - os: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+            ext: ".exe"
 
-        steps:
-            - uses: actions/checkout@v3
-            - name: 'Setup Rust'
-              uses: dtolnay/rust-toolchain@stable
-              with:
-                targets: ${{ matrix.config.rust_target }}
-            - uses: Swatinem/rust-cache@v2
-              with:
-                key: ${{ matrix.config.rust_target }}
-            - name: Package Binaries
-              uses: actions-rs/cargo@v1
-              with:
-                command: build
-                args: --release --target ${{ matrix.config.rust_target }}
-            - name: Create Assets
-              shell: bash
-              run: |
-                BINARY_FILENAME="target/${{ matrix.config.rust_target }}/release/tyedev${{ matrix.config.ext }}"
-                VERSION="${GITHUB_REF#refs/tags/v}"
-                RELEASE_NAME=tyedev-${VERSION}-${{ matrix.config.rust_target }}
-                mkdir "${RELEASE_NAME}"
-                cp LICENSE.txt README.md "${BINARY_FILENAME}" "${RELEASE_NAME}"
-                tar -cvzf "${RELEASE_NAME}.tar.gz" "${RELEASE_NAME}"
-                shasum -a 256 "${RELEASE_NAME}.tar.gz" > "${RELEASE_NAME}.tar.gz.sha256"
-            - name: Release Assets
-              uses: softprops/action-gh-release@v1
-              with:
-                files: |
-                  tyedev-*.tar.gz
-                  tyedev-*.tar.gz.sha256
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Setup Rust"
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.config.rust_target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.config.rust_target }}
+      - name: Package Binaries
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target ${{ matrix.config.rust_target }}
+      - name: Create Assets
+        shell: bash
+        run: |
+          BINARY_FILENAME="target/${{ matrix.config.rust_target }}/release/tyedev${{ matrix.config.ext }}"
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          RELEASE_NAME=tyedev-${VERSION}-${{ matrix.config.rust_target }}
+          mkdir "${RELEASE_NAME}"
+          cp LICENSE.txt README.md "${BINARY_FILENAME}" "${RELEASE_NAME}"
+          tar -cvzf "${RELEASE_NAME}.tar.gz" "${RELEASE_NAME}"
+          shasum -a 256 "${RELEASE_NAME}.tar.gz" > "${RELEASE_NAME}.tar.gz.sha256"
+      - name: Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            tyedev-*.tar.gz
+            tyedev-*.tar.gz.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    publish-crate:
-        name: Publishing to crates.io
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v3
-            - name: Install Rust Toolchain
-              uses: dtolnay/rust-toolchain@stable
-            - uses: Swatinem/rust-cache@v2
-            - run: cargo publish
-              env:
-                CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+  publish-crate:
+    name: Publishing to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
