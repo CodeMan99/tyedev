@@ -54,13 +54,17 @@ jobs:
           mkdir "${RELEASE_NAME}"
           cp LICENSE.txt README.md "${BINARY_FILENAME}" "${RELEASE_NAME}"
           tar -cvzf "${RELEASE_NAME}.tar.gz" "${RELEASE_NAME}"
-          shasum -a 256 "${RELEASE_NAME}.tar.gz" > "${RELEASE_NAME}.tar.gz.sha256"
+          if [[ ${{ runner.os }} == 'Windows' ]]; then
+            certutil -hashfile "${RELEASE_NAME}.tar.gz" sha256 | grep -E '[A-Fa-f0-9]{64}' > "${RELEASE_NAME}.sha256"
+          else
+            shasum -a 256 "${RELEASE_NAME}.tar.gz" > "${RELEASE_NAME}.sha256"
+          fi
       - name: Release Assets
         uses: softprops/action-gh-release@v1
         with:
           files: |
             tyedev-*.tar.gz
-            tyedev-*.tar.gz.sha256
+            tyedev-*.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
