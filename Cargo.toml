@@ -11,6 +11,11 @@ keywords = ["devcontainers", "containers", "vscode", "development", "configurati
 categories = ["config", "command-line-utilities", "development-tools", "virtualization"]
 include = ["LICENSE.txt", "src/", "static/"]
 
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ version }-{ target }{ archive-suffix }"
+bin-dir = "{ name }-{ version }-{ target }/{ bin }{ binary-ext }"
+pkg-fmt = "tgz"
+
 [dependencies]
 ascii_table = { version = "4.0.3", features = ["auto_table_width"] }
 clap = { version = "4.4.6", features = ["derive", "wrap_help"] }
