@@ -26,6 +26,7 @@
 			"extensions": [
 				"bierner.github-markdown-preview",
 				"DavidAnson.vscode-markdownlint",
+				"EditorConfig.EditorConfig",
 				"GitHub.vscode-github-actions"
 			]
 		}
