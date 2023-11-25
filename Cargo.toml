@@ -7,7 +7,7 @@ repository = "https://github.com/CodeMan99/tyedev"
 license = "ISC"
 readme = "README.md"
 authors = ["Cody Taylor <codemister99@yahoo.com>"]
-keywords = ["devcontainers", "containers", "vscode", "development", "configuration", "cli"]
+keywords = ["devcontainers", "containers", "vscode", "development", "configuration"]
 categories = ["config", "command-line-utilities", "development-tools", "virtualization"]
 include = ["LICENSE.txt", "src/", "static/"]
 
