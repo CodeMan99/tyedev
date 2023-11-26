@@ -39,6 +39,7 @@ jobs:
         shell: bash
         run: |
           cargo clippy -- \
+            --no-deps \
             -D warnings \
             -W clippy::unwrap_used \
             -W clippy::expect_used \
