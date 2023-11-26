@@ -5,6 +5,29 @@
 
 Create and manage devcontainer configuration.
 
+## Install
+
+The preferred method is to use [cargo binstall](https://github.com/cargo-bins/cargo-binstall).
+
+```shell
+$ cargo binstall tyedev
+```
+
+Alternatively, download the appropiate [release asset](https://github.com/CodeMan99/tyedev/releases/latest). Then extract and copy as needed.
+
+```shell
+$ shasum --check tyedev-*.sha256
+$ tar -xzf tyedev-*.tar.gz
+$ cp tyedev-*/tyedev ~/.local/bin
+```
+
+The last method is to use the [Github CLI](https://github.com/cli/cli) with the [redraw/gh-install](https://github.com/redraw/gh-install) extension.
+
+```shell
+$ gh ext install redraw/gh-install
+$ gh install CodeMan99/tyedev
+```
+
 ## Usage
 
 Use `--help` to see help on input flags.
