@@ -4,14 +4,13 @@ on:
   push:
     tags:
       - "v*.*.*"
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    name: Building for ${{ matrix.config.os }}
+  build-and-release:
+    name: Building for ${{ matrix.config.os }} and Release
     runs-on: ${{ matrix.config.os }}
 
     strategy:
