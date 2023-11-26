@@ -4,14 +4,13 @@ on:
   push:
     tags:
       - "v*.*.*"
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    name: Building for ${{ matrix.config.os }}
+  build-and-release:
+    name: Building for ${{ matrix.config.os }} and Release
     runs-on: ${{ matrix.config.os }}
 
     strategy:
@@ -27,9 +26,9 @@ jobs:
           - os: macos-latest
             rust_target: aarch64-apple-darwin
             ext: ""
-          # - os: windows-latest
-          #   rust_target: x86_64-pc-windows-msvc
-          #   ext: ".exe"
+          - os: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+            ext: ".exe"
 
     steps:
       - uses: actions/checkout@v3

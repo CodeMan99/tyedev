@@ -1,0 +1,48 @@
+on:
+  push:
+    branches:
+      main
+  pull_request:
+    branches:
+      main
+  workflow_dispatch:
+
+jobs:
+  build-test-lint-and-fmt:
+    name: "Build and Test"
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - os: ubuntu-latest
+            rust_target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            rust_target: aarch64-apple-darwin
+          - os: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.config.rust_target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.config.rust_target }}
+      - name: Build
+        run: cargo build --tests
+      - name: Test
+        run: cargo test
+      - name: Clippy
+        # Use bash to support backslash newline escapes.
+        shell: bash
+        run: |
+          cargo clippy -- \
+            --no-deps \
+            -D warnings \
+            -W clippy::unwrap_used \
+            -W clippy::expect_used \
+            -A clippy::result_large_err
+      - name: Format Check
+        run: cargo fmt -- --check --verbose
