@@ -481,7 +481,7 @@ impl TemplateBuilder {
         for entry in entries {
             let mut entry = entry?;
             let relative_path = entry.path()?;
-            let mut filename = workspace.join(relative_path).canonicalize()?;
+            let mut filename = workspace.join(relative_path);
 
             if template_skip.iter().any(|&name| filename.ends_with(name)) {
                 log::debug!(
@@ -509,7 +509,7 @@ impl TemplateBuilder {
 
                     if filename.ends_with(dc_filename1) || filename.ends_with(dc_filename2) {
                         if attempt_single_file && self.is_single_file_eligible() {
-                            filename = workspace.join(".devcontainer.json").canonicalize()?;
+                            filename = workspace.join(".devcontainer.json");
                         }
 
                         if self.features.len() > 0 {
