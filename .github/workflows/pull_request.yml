@@ -37,6 +37,7 @@ jobs:
       - name: Clippy
         run: |
           cargo clippy -- \
+            -D warnings \
             -W clippy::unwrap_used \
             -W clippy::expect_used \
             -A clippy::result_large_err
