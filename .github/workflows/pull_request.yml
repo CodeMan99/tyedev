@@ -31,18 +31,14 @@ jobs:
         with:
           key: ${{ matrix.config.rust_target }}
       - name: Build
-        shell: bash
         run: cargo build --tests
       - name: Test
-        shell: bash
         run: cargo test
       - name: Clippy
-        shell: bash
         run: |
           cargo clippy -- \
             -W clippy::unwrap_used \
             -W clippy::expect_used \
             -A clippy::result_large_err
       - name: Format Check
-        shell: bash
         run: cargo fmt -- --check --verbose
