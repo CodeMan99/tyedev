@@ -66,18 +66,16 @@ impl Display for LifecycleHook {
             LifecycleHook::Single(value) => write!(f, "{value}"),
             LifecycleHook::Multiple(values) => write!(f, "{}", values.join(", ")),
             LifecycleHook::Named(values) => {
-                values.iter().enumerate().fold(Ok(()), |r, (index, (key, value))| {
-                    r.and_then(|_| {
-                        let join = if index == 0 { "" } else { "; " };
-                        match value.as_ref() {
-                            LifecycleHook::Single(v) => write!(f, "{join}{key}={v}"),
-                            LifecycleHook::Multiple(vs) => {
-                                write!(f, "{join}{key}={}", vs.join(", "))
-                            },
-                            // Only a single level of nesting makes sense.
-                            LifecycleHook::Named(_) => Err(fmt::Error),
-                        }
-                    })
+                values.iter().enumerate().try_for_each(|(index, (key, value))| {
+                    let join = if index == 0 { "" } else { "; " };
+                    match value.as_ref() {
+                        LifecycleHook::Single(v) => write!(f, "{join}{key}={v}"),
+                        LifecycleHook::Multiple(vs) => {
+                            write!(f, "{join}{key}={}", vs.join(", "))
+                        },
+                        // Only a single level of nesting makes sense.
+                        LifecycleHook::Named(_) => Err(fmt::Error),
+                    }
                 })
             },
         }
