@@ -35,6 +35,8 @@ jobs:
       - name: Test
         run: cargo test
       - name: Clippy
+        # Use bash to support backslash newline escapes.
+        shell: bash
         run: |
           cargo clippy -- \
             -D warnings \
