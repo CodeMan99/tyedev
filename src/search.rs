@@ -223,7 +223,7 @@ pub fn search(
         },
         SearchDisplay::Json => {
             let json = serde_json::to_string(&results)?;
-            println!("{}", json);
+            println!("{json}");
         },
     }
 

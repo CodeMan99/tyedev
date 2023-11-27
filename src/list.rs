@@ -87,7 +87,7 @@ pub fn list(index: &DevcontainerIndex, ListArgs { collection_id }: ListArgs) {
     match collection_id {
         Some(oci_reference) => match index.get_collection(&oci_reference) {
             Some(collection) => collection_templates_and_features(&oci_reference, collection),
-            None => println!("No collection found by the given OCI Reference: {}", oci_reference),
+            None => println!("No collection found by the given OCI Reference: {oci_reference}"),
         },
         None => overview_collections(index),
     }

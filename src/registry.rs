@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::fs::{self, File};
 use std::io::{Error, ErrorKind, Write};
+use std::ops::Not;
 use std::path::Path;
 
 use oci_spec::image::MediaType;
@@ -374,7 +375,7 @@ impl DevcontainerIndex {
 
     pub fn iter_features(&self, include_deprecated: bool) -> impl Iterator<Item = &Feature> {
         let all = |_: &&Feature| true;
-        let not_deprecated = |&feature: &&Feature| feature.deprecated.map(|d| !d).unwrap_or(true);
+        let not_deprecated = |&feature: &&Feature| feature.deprecated.map_or(true, Not::not);
 
         self.collections
             .iter()

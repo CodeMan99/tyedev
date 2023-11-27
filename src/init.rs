@@ -146,8 +146,8 @@ pub enum DevOptionPromptValue {
 impl Display for DevOptionPromptValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DevOptionPromptValue::Boolean(value) => write!(f, "{}", value),
-            DevOptionPromptValue::String(value) => write!(f, "{}", value),
+            DevOptionPromptValue::Boolean(value) => write!(f, "{value}"),
+            DevOptionPromptValue::String(value) => write!(f, "{value}"),
         }
     }
 }
@@ -309,14 +309,12 @@ impl FeatureEntryBuilder {
         Ok(())
     }
 
-    fn use_default_values(&mut self, feature: &registry::Feature) -> Result<(), Box<dyn Error>> {
+    fn use_default_values(&mut self, feature: &registry::Feature) {
         log::debug!("FeatureEntryBuilder::use_default_values");
         let key = format!("{}:{}", feature.id, feature.major_version);
         let value = Value::Object(Map::default());
 
         self.features.insert(key, value);
-
-        Ok(())
     }
 
     fn as_value(&self) -> Result<Value, serde_json::Error> {
@@ -779,7 +777,7 @@ pub fn init(
             for feature_ref in feature_refs {
                 let feature = get_feature(index, &feature_ref)?;
                 log::info!("Adding feature: {}", feature_ref.id());
-                template_builder.features.use_default_values(&feature)?;
+                template_builder.features.use_default_values(&feature);
             }
         }
     } else {

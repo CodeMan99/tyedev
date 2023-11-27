@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use ocipkg::ImageName;
 
-/// Opaque type for implementing additional ImageName features
+/// Opaque type for implementing additional `ImageName` features
 #[derive(Debug, Clone)]
 pub struct OciReference(pub ImageName);
 
