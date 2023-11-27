@@ -38,8 +38,7 @@ jobs:
         # Use bash to support backslash newline escapes.
         shell: bash
         run: |
-          cargo clippy -- \
-            --no-deps \
+          cargo clippy --no-deps -- \
             -D warnings \
             -W clippy::expect_used \
             -W clippy::uninlined_format_args \
