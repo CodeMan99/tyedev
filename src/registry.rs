@@ -474,19 +474,17 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
                 let parsed = arr
                     .iter()
                     // TODO: Skip errors of a single feature or template, not the entire collection
-                    .filter_map(|value| {
-                        match serde_json::from_value::<Collection>(value.to_owned()) {
-                            Ok(collection) => {
-                                features_count += collection.features.len();
-                                templates_count += collection.templates.len();
-                                Some(collection)
-                            },
-                            Err(_) => {
-                                // TODO: parse the collection fields so that source_information can be displayed here.
-                                log::warn!("Skipping collection due to parsing error");
-                                None
-                            },
-                        }
+                    .filter_map(|value| match serde_json::from_value::<Collection>(value.to_owned()) {
+                        Ok(collection) => {
+                            features_count += collection.features.len();
+                            templates_count += collection.templates.len();
+                            Some(collection)
+                        },
+                        Err(_) => {
+                            // TODO: parse the collection fields so that source_information can be displayed here.
+                            log::warn!("Skipping collection due to parsing error");
+                            None
+                        },
                     })
                     .collect();
 
