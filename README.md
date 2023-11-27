@@ -104,8 +104,8 @@ Arguments:
   <OCI_REF>  The `id` to inspect
 
 Options:
-  -d, --display-as <FORMAT>  Format for displaying the configuration [default: table] [possible values: table, json,
-                             none]
+  -d, --display-as <FORMAT>  Format for displaying the configuration [default: table] [possible values:
+                             table, json, none]
       --install-sh           Read the `install.sh` script of a given feature
   -v, --verbose...           More output per occurrence
   -q, --quiet...             Less output per occurrence
@@ -143,12 +143,12 @@ Maintainer:    Cody Taylor
 Contact:       https://github.com/CodeMan99/features/issues
 Repository:    https://github.com/CodeMan99/features
 OCI Reference: ghcr.io/codeman99/features
-┌───┬─────────┬────────────────┬──────────────┬───────────────────────────────────────────────────────────────────────┐
-│   │ Type    │ OCI Reference  │ Name         │ Description                                                           │
-├───┼─────────┼────────────────┼──────────────┼───────────────────────────────────────────────────────────────────────┤
-│ 1 │ feature │ ~/circleci-cli │ CircleCI CLI │ Install the CircleCI CLI. Also installs the CircleCI extension for v+ │
-│ 2 │ feature │ ~/exercism-cli │ Exercism CLI │ Install the exercism-cli.                                             │
-└───┴─────────┴────────────────┴──────────────┴───────────────────────────────────────────────────────────────────────┘
+┌───┬─────────┬────────────────┬──────────────┬─────────────────────────────────────────────────────────────┐
+│   │ Type    │ OCI Reference  │ Name         │ Description                                                 │
+├───┼─────────┼────────────────┼──────────────┼─────────────────────────────────────────────────────────────┤
+│ 1 │ feature │ ~/circleci-cli │ CircleCI CLI │ Install the CircleCI CLI. Also installs the CircleCI exten+ │
+│ 2 │ feature │ ~/exercism-cli │ Exercism CLI │ Install the exercism-cli.                                   │
+└───┴─────────┴────────────────┴──────────────┴─────────────────────────────────────────────────────────────┘
 ```
 
 #### tyedev search
@@ -165,11 +165,13 @@ Arguments:
   <VALUE>  The keyword(s) to match
 
 Options:
-  -c, --collection <COLLECTION>  Match which section of the index [default: templates] [possible values: templates,
-                                 features]
-  -d, --display-as <FORMAT>      Format for displaying the results [default: table] [possible values: table, json]
+  -c, --collection <COLLECTION>  Match which section of the index [default: templates] [possible values:
+                                 templates, features]
+  -d, --display-as <FORMAT>      Format for displaying the results [default: table] [possible values: table,
+                                 json]
   -v, --verbose...               More output per occurrence
-  -f, --fields <FIELD>           Match only within the given fields [possible values: id, name, description, keywords]
+  -f, --fields <FIELD>           Match only within the given fields [possible values: id, name, description,
+                                 keywords]
   -q, --quiet...                 Less output per occurrence
       --include-deprecated       Display deprecated results
   -h, --help                     Print help
