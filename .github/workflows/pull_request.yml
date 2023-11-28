@@ -1,3 +1,5 @@
+name: Pull Request
+
 on:
   push:
     branches:
