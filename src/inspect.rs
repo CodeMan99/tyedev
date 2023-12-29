@@ -85,7 +85,7 @@ impl TableData {
 }
 
 trait Displayable: serde::Serialize {
-    fn display_json(&self) -> Result<(), Box<dyn Error>> {
+    fn display_json(&self) -> serde_json::error::Result<()> {
         let json = serde_json::to_string_pretty(self)?;
         println!("{json}");
         Ok(())
@@ -206,7 +206,7 @@ impl Displayable for registry::Template {
     }
 }
 
-fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> Result<(), Box<dyn Error>> {
+fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> serde_json::error::Result<()> {
     log::debug!("display: as {}", format);
 
     match format {
