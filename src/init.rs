@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::env;
-use std::error::Error;
 use std::fmt::{self, Display};
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
@@ -48,10 +47,31 @@ pub struct InitArgs {
     workspace_folder: Option<PathBuf>,
 }
 
+#[allow(clippy::enum_variant_names)]
+#[derive(thiserror::Error, Debug)]
+pub enum InitError {
+    #[error(transparent)]
+    ParseBoolError(#[from] std::str::ParseBoolError),
+    #[error(transparent)]
+    IOError(#[from] std::io::Error),
+    #[error(transparent)]
+    SystemTimeError(#[from] std::time::SystemTimeError),
+    #[error(transparent)]
+    RegexBuildError(#[from] regex::Error),
+    #[error(transparent)]
+    JsonError(#[from] serde_json::error::Error),
+    #[error(transparent)]
+    JsonWithCommentsError(#[from] serde_jsonc::error::Error),
+    #[error(transparent)]
+    PromptError(#[from] inquire::error::InquireError),
+    #[error(transparent)]
+    OciPkgError(#[from] ocipkg::error::Error),
+}
+
 fn get_feature(
     index: &registry::DevcontainerIndex,
     feature_ref: &OciReference,
-) -> Result<registry::Feature, Box<dyn Error>> {
+) -> ocipkg::error::Result<registry::Feature> {
     log::debug!("get_feature");
 
     match index.get_feature(&feature_ref.id()) {
@@ -60,7 +80,7 @@ fn get_feature(
     }
 }
 
-fn pull_feature_configuration(feature_ref: &OciReference) -> Result<registry::Feature, Box<dyn Error>> {
+fn pull_feature_configuration(feature_ref: &OciReference) -> ocipkg::error::Result<registry::Feature> {
     log::debug!("pull_feature_configuration");
     let bytes = registry::pull_archive_bytes(feature_ref)?;
     let mut archive = Archive::new(bytes.as_slice());
@@ -166,7 +186,7 @@ impl<'t> DevOptionPrompt<'t> {
         }
     }
 
-    fn display_prompt(&self) -> Result<DevOptionPromptValue, Box<dyn Error>> {
+    fn display_prompt(&self) -> Result<DevOptionPromptValue, InitError> {
         let dev_option = self.inner;
         let default = dev_option.configured_default();
 
@@ -276,7 +296,7 @@ impl FeatureEntryBuilder {
         }
     }
 
-    fn use_prompt_values(&mut self, feature: &registry::Feature) -> Result<(), Box<dyn Error>> {
+    fn use_prompt_values(&mut self, feature: &registry::Feature) -> Result<(), InitError> {
         log::debug!("FeatureEntryBuilder::use_prompt_values");
         let key = format!("{}:{}", feature.id, feature.major_version);
         let value = {
@@ -335,7 +355,7 @@ struct TemplateBuilder {
 }
 
 impl TemplateBuilder {
-    fn new(template_ref: &OciReference, config: Option<registry::Template>) -> Result<Self, Box<dyn Error>> {
+    fn new(template_ref: &OciReference, config: Option<registry::Template>) -> ocipkg::error::Result<Self> {
         log::debug!("TemplateBuilder::new");
         let archive_bytes = registry::pull_archive_bytes(template_ref)?;
         let template_archive = TemplateBuilder {
@@ -352,7 +372,7 @@ impl TemplateBuilder {
         Archive::new(self.archive_bytes.as_slice())
     }
 
-    fn replace_config(&mut self) -> Result<(), Box<dyn Error>> {
+    fn replace_config(&mut self) -> std::io::Result<()> {
         log::debug!("TemplateBuilder::replace_config");
         let mut tar = self.as_archive();
         let entries = tar.entries()?;
@@ -380,7 +400,7 @@ impl TemplateBuilder {
         ))?
     }
 
-    fn use_prompt_values(&mut self) -> Result<(), Box<dyn Error>> {
+    fn use_prompt_values(&mut self) -> Result<(), InitError> {
         log::debug!("TemplateBuilder::use_prompt_values");
         let config = self
             .config
@@ -400,7 +420,7 @@ impl TemplateBuilder {
         Ok(())
     }
 
-    fn use_default_values(&mut self) -> Result<(), Box<dyn Error>> {
+    fn use_default_values(&mut self) -> std::io::Result<()> {
         log::debug!("TemplateBuilder::use_default_values");
         let config = self
             .config
@@ -447,11 +467,7 @@ impl TemplateBuilder {
         false
     }
 
-    fn apply_context_and_features(
-        &mut self,
-        attempt_single_file: bool,
-        workspace: &Path,
-    ) -> Result<(), Box<dyn Error>> {
+    fn apply_context_and_features(&mut self, attempt_single_file: bool, workspace: &Path) -> Result<(), InitError> {
         log::debug!("TemplateBuilder::apply_context_and_features");
         let template_option_re = Regex::new(r"\$\{templateOption:\s*(?<name>\w+)\s*\}")?;
         let apply_context = |captures: &Captures| -> &[u8] {
@@ -548,7 +564,7 @@ impl TemplateBuilder {
         Ok(())
     }
 
-    fn create_empty_start_point() -> Result<Self, Box<dyn Error>> {
+    fn create_empty_start_point() -> Result<Self, InitError> {
         let template_value = serde_json::json!({
             "id": "tyedev-base-template",
             "version": "1.0.0",
@@ -695,7 +711,7 @@ pub fn init(
         include_deprecated,
         workspace_folder,
     }: InitArgs,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), InitError> {
     log::debug!("init");
     // Do this evaluation of the `env` first so that it can error early.
     let workspace = workspace_folder.map_or_else(env::current_dir, Ok)?;
@@ -818,12 +834,11 @@ pub fn init(
 // TODO these are more *proof of concept* than actual tests...
 #[cfg(test)]
 mod tests {
-    use super::{FeatureEntryBuilder, TemplateBuilder};
+    use super::{FeatureEntryBuilder, InitError, TemplateBuilder};
     use serde_json::{self, Map, Value};
-    use std::error::Error;
 
     #[test]
-    fn test_feature_entry_builder_as_value() -> Result<(), Box<dyn Error>> {
+    fn test_feature_entry_builder_as_value() -> serde_json::error::Result<()> {
         let mut feature_entry_builder = FeatureEntryBuilder::default();
 
         let git_id = "ghcr.io/devcontainers/git:1";
@@ -843,7 +858,7 @@ mod tests {
     }
 
     #[test]
-    fn test_create_empty_start_point() -> Result<(), Box<dyn Error>> {
+    fn test_create_empty_start_point() -> Result<(), InitError> {
         let _template_builder = TemplateBuilder::create_empty_start_point()?;
         Ok(())
     }

@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::fmt::{self, Display};
 use std::io::{self, Read, Write};
 
@@ -218,7 +217,7 @@ fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> serde
     Ok(())
 }
 
-fn display_files(oci_ref: &OciReference) -> Result<(), Box<dyn Error>> {
+fn display_files(oci_ref: &OciReference) -> ocipkg::error::Result<()> {
     log::debug!("display_files");
 
     let bytes = registry::pull_archive_bytes(oci_ref)?;
@@ -242,7 +241,7 @@ fn display_files(oci_ref: &OciReference) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn display_install_sh(oci_ref: &OciReference) -> Result<(), Box<dyn Error>> {
+fn display_install_sh(oci_ref: &OciReference) -> ocipkg::error::Result<()> {
     log::debug!("display_install_sh");
 
     let bytes = registry::pull_archive_bytes(oci_ref)?;
@@ -277,7 +276,7 @@ pub fn inspect(
         install_sh,
         show_files,
     }: InspectArgs,
-) -> Result<(), Box<dyn Error>> {
+) -> ocipkg::error::Result<()> {
     log::debug!("inspect");
 
     let id = oci_ref.id();

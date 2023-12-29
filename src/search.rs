@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::fmt;
 
 use clap::builder::PossibleValue;
@@ -165,7 +164,7 @@ pub fn search(
         fields,
         include_deprecated,
     }: SearchArgs,
-) -> Result<(), Box<dyn Error>> {
+) -> serde_json::error::Result<()> {
     log::debug!("search");
 
     let search_fields =

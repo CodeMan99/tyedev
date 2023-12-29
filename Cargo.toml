@@ -17,6 +17,7 @@ bin-dir = "{ name }-{ version }-{ target }/{ bin }{ binary-ext }"
 pkg-fmt = "tgz"
 
 [dependencies]
+anyhow = { version = "1.0.77", features = ["backtrace"] }
 clap = { version = "4.4.6", features = ["derive", "wrap_help"] }
 clap_complete = { version = "4.4.4", optional = true }
 clap-verbosity-flag = "2.1.0"
@@ -32,6 +33,7 @@ serde = { version = "1.0.188", features = ["derive"] }
 serde_json = { version = "1.0.107", features = ["preserve_order"] }
 serde_jsonc = { version = "1.0.107", features = ["preserve_order"] }
 tar = "0.4.40"
+thiserror = "1.0.52"
 
 [target.'cfg(windows)'.dependencies]
 ascii_table = "4.0.3"
