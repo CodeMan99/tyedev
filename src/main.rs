@@ -1,5 +1,4 @@
 use std::env;
-use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
@@ -71,7 +70,7 @@ fn data_directory<P: AsRef<Path>>(namespace: P) -> io::Result<PathBuf> {
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<(), anyhow::Error> {
     let args = Args::parse();
 
     env_logger::Builder::new()

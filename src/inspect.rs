@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::fmt::{self, Display};
 use std::io::{self, Read, Write};
 
@@ -85,7 +84,7 @@ impl TableData {
 }
 
 trait Displayable: serde::Serialize {
-    fn display_json(&self) -> Result<(), Box<dyn Error>> {
+    fn display_json(&self) -> serde_json::error::Result<()> {
         let json = serde_json::to_string_pretty(self)?;
         println!("{json}");
         Ok(())
@@ -206,7 +205,7 @@ impl Displayable for registry::Template {
     }
 }
 
-fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> Result<(), Box<dyn Error>> {
+fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> serde_json::error::Result<()> {
     log::debug!("display: as {}", format);
 
     match format {
@@ -218,7 +217,7 @@ fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> Resul
     Ok(())
 }
 
-fn display_files(oci_ref: &OciReference) -> Result<(), Box<dyn Error>> {
+fn display_files(oci_ref: &OciReference) -> ocipkg::error::Result<()> {
     log::debug!("display_files");
 
     let bytes = registry::pull_archive_bytes(oci_ref)?;
@@ -242,7 +241,7 @@ fn display_files(oci_ref: &OciReference) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn display_install_sh(oci_ref: &OciReference) -> Result<(), Box<dyn Error>> {
+fn display_install_sh(oci_ref: &OciReference) -> ocipkg::error::Result<()> {
     log::debug!("display_install_sh");
 
     let bytes = registry::pull_archive_bytes(oci_ref)?;
@@ -277,7 +276,7 @@ pub fn inspect(
         install_sh,
         show_files,
     }: InspectArgs,
-) -> Result<(), Box<dyn Error>> {
+) -> ocipkg::error::Result<()> {
     log::debug!("inspect");
 
     let id = oci_ref.id();
