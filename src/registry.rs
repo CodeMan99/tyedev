@@ -473,18 +473,50 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
             |arr| {
                 let parsed = arr
                     .iter()
-                    // TODO: Skip errors of a single feature or template, not the entire collection
-                    .filter_map(|value| match serde_json::from_value::<Collection>(value.to_owned()) {
-                        Ok(collection) => {
-                            features_count += collection.features.len();
-                            templates_count += collection.templates.len();
-                            Some(collection)
-                        },
-                        Err(_) => {
-                            // TODO: parse the collection fields so that source_information can be displayed here.
-                            log::warn!("Skipping collection due to parsing error");
-                            None
-                        },
+                    .filter_map(|value| {
+                        let source_information: SourceInformation = value
+                            .get("sourceInformation")
+                            .and_then(|value| serde_json::from_value(value.to_owned()).ok())?;
+                        let features = value.get("features").and_then(|value| value.as_array())?;
+                        let features = features
+                            .iter()
+                            .flat_map(|value| match serde_json::from_value::<Feature>(value.to_owned()) {
+                                Ok(feature) => {
+                                    features_count += 1;
+                                    Some(feature)
+                                },
+                                Err(_) => {
+                                    log::warn!(
+                                        "Skipping feature due to parsing error. Collection.oci_ref = {}",
+                                        &source_information.oci_reference
+                                    );
+                                    None
+                                },
+                            })
+                            .collect();
+                        let templates = value.get("templates").and_then(|value| value.as_array())?;
+                        let templates = templates
+                            .iter()
+                            .flat_map(|value| match serde_json::from_value::<Template>(value.to_owned()) {
+                                Ok(template) => {
+                                    templates_count += 1;
+                                    Some(template)
+                                },
+                                Err(_) => {
+                                    log::warn!(
+                                        "Skipping template due to parsing error. Collection.oci_ref = {}",
+                                        &source_information.oci_reference
+                                    );
+                                    None
+                                },
+                            })
+                            .collect();
+
+                        Some(Collection {
+                            source_information,
+                            features,
+                            templates,
+                        })
                     })
                     .collect();
 
