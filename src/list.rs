@@ -22,37 +22,41 @@ fn collection_templates_and_features(oci_reference: &str, collection: &Collectio
     println!("Repository:    {}", &source_information.repository);
     println!("OCI Reference: {}", &source_information.oci_reference);
 
-    let search_results = {
-        let features = collection.features.iter().map(search::SearchResult::from);
-        let templates = collection.templates.iter().map(search::SearchResult::from);
-        features.chain(templates)
-    };
-    let data: Vec<[String; 5]> = search_results
-        .enumerate()
-        .map(|(i, r)| {
-            let description = r
-                .description
-                .as_ref()
-                .and_then(|d| d.lines().next())
-                .unwrap_or_default();
-            [
-                (i + 1).to_string(),
-                r.collection.to_string(),
-                r.id.replace(oci_reference, "~"),
-                r.name.to_string(),
-                description.to_string(),
-            ]
-        })
-        .collect();
-    let mut table = ascii_table::AsciiTable::default();
+    let count = collection.features.len() + collection.templates.len();
 
-    table.column(0).set_align(ascii_table::Align::Right);
-    table.column(1).set_header("Type");
-    table.column(2).set_header("OCI Reference");
-    table.column(3).set_header("Name").set_max_width(40);
-    table.column(4).set_header("Description").set_max_width(75);
+    if count > 0 {
+        let search_results = {
+            let features = collection.features.iter().map(search::SearchResult::from);
+            let templates = collection.templates.iter().map(search::SearchResult::from);
+            features.chain(templates)
+        };
+        let data: Vec<[String; 5]> = search_results
+            .enumerate()
+            .map(|(i, r)| {
+                let description = r
+                    .description
+                    .as_ref()
+                    .and_then(|d| d.lines().next())
+                    .unwrap_or_default();
+                [
+                    (i + 1).to_string(),
+                    r.collection.to_string(),
+                    r.id.replace(oci_reference, "~"),
+                    r.name.to_string(),
+                    description.to_string(),
+                ]
+            })
+            .collect();
+        let mut table = ascii_table::AsciiTable::default();
 
-    table.print(data);
+        table.column(0).set_align(ascii_table::Align::Right);
+        table.column(1).set_header("Type");
+        table.column(2).set_header("OCI Reference");
+        table.column(3).set_header("Name").set_max_width(40);
+        table.column(4).set_header("Description").set_max_width(75);
+
+        table.print(data);
+    }
 }
 
 fn overview_collections(index: &DevcontainerIndex) {
