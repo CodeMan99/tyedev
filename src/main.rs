@@ -1,16 +1,16 @@
 use std::env;
-use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
-#[cfg(feature = "completions")]
-use clap::CommandFactory;
 use clap::{Parser, Subcommand};
-#[cfg(feature = "completions")]
-use clap_complete::{generate, shells::Shell};
 use clap_verbosity_flag::{Verbosity, WarnLevel};
+#[cfg(feature = "completions")]
+use ::{
+    clap::CommandFactory,
+    clap_complete::{generate, shells::Shell},
+};
 
 mod init;
 mod inspect;
@@ -49,15 +49,6 @@ enum Commands {
     Search(search::SearchArgs),
 }
 
-fn program_name() -> io::Result<String> {
-    log::debug!("program_name");
-    let exe = env::current_exe()?;
-    exe.file_name()
-        .and_then(OsStr::to_str)
-        .map(String::from)
-        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Executable not a file path"))
-}
-
 fn data_directory<P: AsRef<Path>>(namespace: P) -> io::Result<PathBuf> {
     log::debug!("data_directory");
     if let Some(path) = dirs::data_dir() {
@@ -78,8 +69,15 @@ fn main() -> Result<(), anyhow::Error> {
         .format_timestamp_millis()
         .init();
 
-    let prog_name = program_name()?;
-    let data_dir = data_directory(&prog_name)?;
+    const BIN_NAME: &str = env!("CARGO_BIN_NAME");
+
+    #[cfg(feature = "completions")]
+    if let Some(Commands::Completions { shell }) = args.command {
+        generate(shell, &mut Args::command_for_update(), BIN_NAME, &mut io::stdout());
+        return Ok(());
+    }
+
+    let data_dir = data_directory(BIN_NAME)?;
     let index_file = data_dir.join("devcontainer-index.json");
 
     if args.pull_index {
@@ -97,7 +95,7 @@ fn main() -> Result<(), anyhow::Error> {
             // suggested user action
             log::error!(
                 "Missing devcontainer-index.json.\n\n\tRun `{} --pull-index`.\n",
-                prog_name
+                BIN_NAME
             );
         }
 
@@ -105,9 +103,7 @@ fn main() -> Result<(), anyhow::Error> {
 
         match command {
             #[cfg(feature = "completions")]
-            Commands::Completions { shell } => {
-                generate(shell, &mut Args::command_for_update(), &prog_name, &mut io::stdout());
-            },
+            Commands::Completions { .. } => unreachable!(),
             Commands::Init(args) => init::init(&index, args)?,
             Commands::Inspect(args) => inspect::inspect(&index, args)?,
             Commands::List(args) => list::list(&index, args),
