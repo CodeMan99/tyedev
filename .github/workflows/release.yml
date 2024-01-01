@@ -40,10 +40,7 @@ jobs:
         with:
           key: ${{ matrix.config.rust_target }}
       - name: Cargo Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target ${{ matrix.config.rust_target }}
+        run: cargo build --release --target ${{ matrix.config.rust_target }}
       - name: Create Assets
         shell: bash
         run: |
