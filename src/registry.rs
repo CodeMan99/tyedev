@@ -474,10 +474,26 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
                 let parsed = arr
                     .iter()
                     .filter_map(|value| {
-                        let source_information: SourceInformation = value
+                        let source_information: SourceInformation = match value
                             .get("sourceInformation")
-                            .and_then(|value| serde_json::from_value(value.to_owned()).ok())?;
-                        let features = value.get("features").and_then(|value| value.as_array())?;
+                            .and_then(|value| serde_json::from_value(value.to_owned()).ok())
+                        {
+                            Some(value) => Some(value),
+                            None => {
+                                log::warn!("Skipping collection due to parsing error of sourceInformation");
+                                None
+                            },
+                        }?;
+                        let features = match value.get("features").and_then(|value| value.as_array()) {
+                            Some(arr) => Some(arr),
+                            None => {
+                                log::warn!(
+                                    "Skipping collection due to parse error. The `features` field is not an array. Collection.oci_ref = {}",
+                                    &source_information.oci_reference
+                                );
+                                None
+                            },
+                        }?;
                         let features = features
                             .iter()
                             .flat_map(|value| match serde_json::from_value::<Feature>(value.to_owned()) {
@@ -494,7 +510,16 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
                                 },
                             })
                             .collect();
-                        let templates = value.get("templates").and_then(|value| value.as_array())?;
+                        let templates = match value.get("templates").and_then(|value| value.as_array()) {
+                            Some(arr) => Some(arr),
+                            None => {
+                                log::warn!(
+                                    "Skipping collection due to parsing error. The `templates` field is not an array. Collection.oci_ref = {}",
+                                    &source_information.oci_reference,
+                                );
+                                None
+                            },
+                        }?;
                         let templates = templates
                             .iter()
                             .flat_map(|value| match serde_json::from_value::<Template>(value.to_owned()) {
