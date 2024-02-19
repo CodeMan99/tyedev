@@ -598,6 +598,7 @@ impl TemplateBuilder {
             let mut header = Header::new_gnu();
             header.set_entry_type(EntryType::Directory);
             header.set_path(path)?;
+            header.set_size(0);
             header.set_mtime(mtime);
             header.set_mode(0o775);
             header.set_uid(1000);
