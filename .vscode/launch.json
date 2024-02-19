@@ -11,6 +11,7 @@
             "options": ["init", "inspect", "list", "search"],
             "default": "search"
         },
+        // Actually, exactly one argument of the subcommand. Dang it...
         {
             "id": "enterOptions",
             "description": "Pass flag and option arguments",
@@ -34,7 +35,10 @@
                 }
             },
             "args": ["${input:enterCommand}", "${input:enterOptions}"],
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_BACKTRACE": "1"
+            }
         },
         {
             "type": "lldb",
@@ -53,7 +57,10 @@
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_BACKTRACE": "1"
+            }
         }
     ]
 }
