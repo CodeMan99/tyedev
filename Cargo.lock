@@ -1296,7 +1296,7 @@ dependencies = [
 
 [[package]]
 name = "tyedev"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "anyhow",
  "ascii_table",
