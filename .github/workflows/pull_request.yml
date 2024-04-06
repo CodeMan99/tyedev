@@ -29,7 +29,7 @@ jobs:
         id: toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.config.rust_target }}
+          target: ${{ matrix.config.rust_target }}
       - uses: Swatinem/rust-cache@v2
         with:
           key: "${{ matrix.config.rust_target }}-${{ steps.toolchain.outputs.cachekey }}"
