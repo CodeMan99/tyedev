@@ -24,14 +24,15 @@ jobs:
           - os: windows-latest
             rust_target: x86_64-pc-windows-msvc
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Rust
+        id: toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.config.rust_target }}
+          target: ${{ matrix.config.rust_target }}
       - uses: Swatinem/rust-cache@v2
         with:
-          key: ${{ matrix.config.rust_target }}
+          key: "${{ matrix.config.rust_target }}-${{ steps.toolchain.outputs.cachekey }}"
       - name: Build
         run: cargo build --tests
       - name: Test
