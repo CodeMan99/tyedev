@@ -5,8 +5,8 @@ use std::io::{Error, ErrorKind, Write};
 use std::ops::Not;
 use std::path::Path;
 
-use oci_spec::image::MediaType;
-use ocipkg::{distribution::Client, Digest, ImageName};
+use ocipkg::distribution::{get_layer_bytes, MediaType};
+use ocipkg::ImageName;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 
@@ -407,20 +407,6 @@ impl DevcontainerIndex {
     pub fn get_template(&self, template_id: &str) -> Option<&Template> {
         self.iter_templates(true).find(|&template| template.id == template_id)
     }
-}
-
-fn get_layer_bytes(image_name: &ImageName, f: impl Fn(&MediaType) -> bool) -> ocipkg::error::Result<Vec<u8>> {
-    let registry_url = image_name.registry_url()?;
-    let mut client = Client::new(registry_url, image_name.name.clone())?;
-    let manifest = client.get_manifest(&image_name.reference)?;
-    let layer = manifest
-        .layers()
-        .iter()
-        .find(|&d| f(d.media_type()))
-        .ok_or(ocipkg::error::Error::MissingLayer)?;
-    let digest = Digest::new(layer.digest())?;
-
-    client.get_blob(&digest)
 }
 
 /// Pull OCI Artifact "ghcr.io/devcontainers/index:latest" and download the JSON layer to the given filename.
