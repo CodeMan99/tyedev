@@ -32,7 +32,6 @@ serde = { version = "1.0.188", features = ["derive"] }
 serde_json = { version = "1.0.107", features = ["preserve_order"] }
 serde_jsonc = { version = "1.0.107", features = ["preserve_order"] }
 tar = "0.4.40"
-thiserror = "1.0.52"
 
 [target.'cfg(windows)'.dependencies]
 ascii_table = "4.0.3"
