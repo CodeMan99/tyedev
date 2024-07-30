@@ -217,7 +217,7 @@ fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> serde
     Ok(())
 }
 
-fn display_files(oci_ref: &OciReference) -> ocipkg::error::Result<()> {
+fn display_files(oci_ref: &OciReference) -> anyhow::Result<()> {
     log::debug!("display_files");
 
     let bytes = registry::pull_archive_bytes(oci_ref)?;
@@ -241,7 +241,7 @@ fn display_files(oci_ref: &OciReference) -> ocipkg::error::Result<()> {
     Ok(())
 }
 
-fn display_install_sh(oci_ref: &OciReference) -> ocipkg::error::Result<()> {
+fn display_install_sh(oci_ref: &OciReference) -> anyhow::Result<()> {
     log::debug!("display_install_sh");
 
     let bytes = registry::pull_archive_bytes(oci_ref)?;
@@ -276,7 +276,7 @@ pub fn inspect(
         install_sh,
         show_files,
     }: InspectArgs,
-) -> ocipkg::error::Result<()> {
+) -> anyhow::Result<()> {
     log::debug!("inspect");
 
     let id = oci_ref.id();
