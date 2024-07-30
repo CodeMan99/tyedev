@@ -1,6 +1,6 @@
 [package]
 name = "tyedev"
-version = "0.3.3"
+version = "0.3.4"
 edition = "2021"
 description = "Create and manage devcontainer configuration"
 repository = "https://github.com/CodeMan99/tyedev"
@@ -17,21 +17,21 @@ bin-dir = "{ name }-{ version }-{ target }/{ bin }{ binary-ext }"
 pkg-fmt = "tgz"
 
 [dependencies]
-anyhow = { version = "1.0.77", features = ["backtrace"] }
-clap = { version = "4.4.6", features = ["derive", "wrap_help"] }
-clap_complete = { version = "4.4.4", optional = true }
-clap-verbosity-flag = "2.1.0"
+anyhow = { version = "1.0.86", features = ["backtrace"] }
+clap = { version = "4.5.11", features = ["derive", "wrap_help"] }
+clap_complete = { version = "4.5.11", optional = true }
+clap-verbosity-flag = "2.2.1"
 dirs = "5.0.1"
-env_logger = "0.11.3"
-human_format = "1.0.3"
+env_logger = "0.11.5"
+human_format = "1.1.0"
 inquire = { version = "0.6.2", features = ["editor"] }
-log = "0.4.20"
+log = "0.4.22"
 ocipkg = "0.3.9"
-regex = "1.10.2"
-serde = { version = "1.0.188", features = ["derive"] }
-serde_json = { version = "1.0.107", features = ["preserve_order"] }
-serde_jsonc = { version = "1.0.107", features = ["preserve_order"] }
-tar = "0.4.40"
+regex = "1.10.5"
+serde = { version = "1.0.204", features = ["derive"] }
+serde_json = { version = "1.0.108", features = ["preserve_order"] }
+serde_jsonc = { version = "1.0.108", features = ["preserve_order"] }
+tar = "0.4.41"
 
 [target.'cfg(windows)'.dependencies]
 ascii_table = "4.0.3"
