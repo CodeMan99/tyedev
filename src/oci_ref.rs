@@ -18,7 +18,7 @@ impl OciReference {
 }
 
 impl FromStr for OciReference {
-    type Err = ocipkg::error::Error;
+    type Err = anyhow::Error;
 
     fn from_str(name: &str) -> Result<Self, Self::Err> {
         ImageName::parse(name).map(OciReference)
@@ -28,7 +28,7 @@ impl FromStr for OciReference {
 #[cfg(test)]
 mod tests {
     use super::OciReference;
-    use ocipkg::error::Result;
+    use anyhow::Result;
 
     #[test]
     fn test_parse() -> Result<()> {

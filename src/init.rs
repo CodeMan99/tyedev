@@ -47,31 +47,7 @@ pub struct InitArgs {
     workspace_folder: Option<PathBuf>,
 }
 
-#[allow(clippy::enum_variant_names)]
-#[derive(thiserror::Error, Debug)]
-pub enum InitError {
-    #[error(transparent)]
-    ParseBoolError(#[from] std::str::ParseBoolError),
-    #[error(transparent)]
-    IOError(#[from] std::io::Error),
-    #[error(transparent)]
-    SystemTimeError(#[from] std::time::SystemTimeError),
-    #[error(transparent)]
-    RegexBuildError(#[from] regex::Error),
-    #[error(transparent)]
-    JsonError(#[from] serde_json::error::Error),
-    #[error(transparent)]
-    JsonWithCommentsError(#[from] serde_jsonc::error::Error),
-    #[error(transparent)]
-    PromptError(#[from] inquire::error::InquireError),
-    #[error(transparent)]
-    OciPkgError(#[from] ocipkg::error::Error),
-}
-
-fn get_feature(
-    index: &registry::DevcontainerIndex,
-    feature_ref: &OciReference,
-) -> ocipkg::error::Result<registry::Feature> {
+fn get_feature(index: &registry::DevcontainerIndex, feature_ref: &OciReference) -> anyhow::Result<registry::Feature> {
     log::debug!("get_feature");
 
     match index.get_feature(&feature_ref.id()) {
@@ -80,7 +56,7 @@ fn get_feature(
     }
 }
 
-fn pull_feature_configuration(feature_ref: &OciReference) -> ocipkg::error::Result<registry::Feature> {
+fn pull_feature_configuration(feature_ref: &OciReference) -> anyhow::Result<registry::Feature> {
     log::debug!("pull_feature_configuration");
     let bytes = registry::pull_archive_bytes(feature_ref)?;
     let mut archive = Archive::new(bytes.as_slice());
@@ -186,7 +162,7 @@ impl<'t> DevOptionPrompt<'t> {
         }
     }
 
-    fn display_prompt(&self) -> Result<DevOptionPromptValue, InitError> {
+    fn display_prompt(&self) -> anyhow::Result<DevOptionPromptValue> {
         let dev_option = self.inner;
         let default = dev_option.configured_default();
 
@@ -296,7 +272,7 @@ impl FeatureEntryBuilder {
         }
     }
 
-    fn use_prompt_values(&mut self, feature: &registry::Feature) -> Result<(), InitError> {
+    fn use_prompt_values(&mut self, feature: &registry::Feature) -> anyhow::Result<()> {
         log::debug!("FeatureEntryBuilder::use_prompt_values");
         let key = format!("{}:{}", feature.id, feature.major_version);
         let value = {
@@ -355,7 +331,7 @@ struct TemplateBuilder {
 }
 
 impl TemplateBuilder {
-    fn new(template_ref: &OciReference, config: Option<registry::Template>) -> ocipkg::error::Result<Self> {
+    fn new(template_ref: &OciReference, config: Option<registry::Template>) -> anyhow::Result<Self> {
         log::debug!("TemplateBuilder::new");
         let archive_bytes = registry::pull_archive_bytes(template_ref)?;
         let template_archive = TemplateBuilder {
@@ -400,7 +376,7 @@ impl TemplateBuilder {
         ))?
     }
 
-    fn use_prompt_values(&mut self) -> Result<(), InitError> {
+    fn use_prompt_values(&mut self) -> anyhow::Result<()> {
         log::debug!("TemplateBuilder::use_prompt_values");
         let config = self
             .config
@@ -467,7 +443,7 @@ impl TemplateBuilder {
         false
     }
 
-    fn apply_context_and_features(&mut self, attempt_single_file: bool, workspace: &Path) -> Result<(), InitError> {
+    fn apply_context_and_features(&mut self, attempt_single_file: bool, workspace: &Path) -> anyhow::Result<()> {
         log::debug!("TemplateBuilder::apply_context_and_features");
         let template_option_re = Regex::new(r"\$\{templateOption:\s*(?<name>\w+)\s*\}")?;
         let apply_context = |captures: &Captures| -> &[u8] {
@@ -564,7 +540,7 @@ impl TemplateBuilder {
         Ok(())
     }
 
-    fn create_empty_start_point() -> Result<Self, InitError> {
+    fn create_empty_start_point() -> anyhow::Result<Self> {
         let template_value = serde_json::json!({
             "id": "tyedev-base-template",
             "version": "1.0.0",
@@ -712,7 +688,7 @@ pub fn init(
         include_deprecated,
         workspace_folder,
     }: InitArgs,
-) -> Result<(), InitError> {
+) -> anyhow::Result<()> {
     log::debug!("init");
     // Do this evaluation of the `env` first so that it can error early.
     let workspace = workspace_folder.map_or_else(env::current_dir, Ok)?;
@@ -835,7 +811,7 @@ pub fn init(
 // TODO these are more *proof of concept* than actual tests...
 #[cfg(test)]
 mod tests {
-    use super::{FeatureEntryBuilder, InitError, TemplateBuilder};
+    use super::{FeatureEntryBuilder, TemplateBuilder};
     use serde_json::{self, Map, Value};
 
     #[test]
@@ -859,7 +835,7 @@ mod tests {
     }
 
     #[test]
-    fn test_create_empty_start_point() -> Result<(), InitError> {
+    fn test_create_empty_start_point() -> anyhow::Result<()> {
         let _template_builder = TemplateBuilder::create_empty_start_point()?;
         Ok(())
     }

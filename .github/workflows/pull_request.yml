@@ -45,7 +45,6 @@ jobs:
             -D warnings \
             -W clippy::expect_used \
             -W clippy::uninlined_format_args \
-            -W clippy::unwrap_used \
-            -A clippy::result_large_err
+            -W clippy::unwrap_used
       - name: Format Check
         run: cargo fmt -- --check --verbose
