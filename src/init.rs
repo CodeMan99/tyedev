@@ -47,10 +47,7 @@ pub struct InitArgs {
     workspace_folder: Option<PathBuf>,
 }
 
-fn get_feature(
-    index: &registry::DevcontainerIndex,
-    feature_ref: &OciReference,
-) -> anyhow::Result<registry::Feature> {
+fn get_feature(index: &registry::DevcontainerIndex, feature_ref: &OciReference) -> anyhow::Result<registry::Feature> {
     log::debug!("get_feature");
 
     match index.get_feature(&feature_ref.id()) {
@@ -814,7 +811,7 @@ pub fn init(
 // TODO these are more *proof of concept* than actual tests...
 #[cfg(test)]
 mod tests {
-    use super::{FeatureEntryBuilder, InitError, TemplateBuilder};
+    use super::{FeatureEntryBuilder, TemplateBuilder};
     use serde_json::{self, Map, Value};
 
     #[test]
@@ -838,7 +835,7 @@ mod tests {
     }
 
     #[test]
-    fn test_create_empty_start_point() -> Result<(), InitError> {
+    fn test_create_empty_start_point() -> anyhow::Result<()> {
         let _template_builder = TemplateBuilder::create_empty_start_point()?;
         Ok(())
     }

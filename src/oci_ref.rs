@@ -28,7 +28,7 @@ impl FromStr for OciReference {
 #[cfg(test)]
 mod tests {
     use super::OciReference;
-    use ocipkg::error::Result;
+    use anyhow::Result;
 
     #[test]
     fn test_parse() -> Result<()> {
