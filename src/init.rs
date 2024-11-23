@@ -47,7 +47,10 @@ pub struct InitArgs {
     workspace_folder: Option<PathBuf>,
 }
 
-async fn get_feature(index: &registry::DevcontainerIndex, feature_ref: &OciReference) -> anyhow::Result<registry::Feature> {
+async fn get_feature(
+    index: &registry::DevcontainerIndex,
+    feature_ref: &OciReference,
+) -> anyhow::Result<registry::Feature> {
     log::debug!("get_feature");
 
     match index.get_feature(&feature_ref.id()) {

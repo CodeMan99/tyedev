@@ -6,10 +6,10 @@ use std::ops::Not;
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use oci_client::Client;
 use oci_client::secrets::RegistryAuth;
-use serde_json::Value as JsonValue;
+use oci_client::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::Value as JsonValue;
 
 use crate::oci_ref::OciReference;
 
@@ -416,7 +416,9 @@ pub async fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<()> 
 
     let image: OciReference = "ghcr.io/devcontainers/index:latest".parse()?;
     let accepted_media_types = vec!["application/vnd.devcontainers.index.layer.v1+json"];
-    let blob = get_layer_bytes(&image, accepted_media_types).await.context("Failed to pull devcontainer index")?;
+    let blob = get_layer_bytes(&image, accepted_media_types)
+        .await
+        .context("Failed to pull devcontainer index")?;
     let mut file = File::create(filename)?;
 
     file.write_all(&blob[..])?;
@@ -431,7 +433,9 @@ pub async fn pull_archive_bytes(image: &OciReference) -> Result<Vec<u8>> {
     log::debug!("pull_archive_bytes");
 
     let accepted_media_types = vec!["application/vnd.devcontainers.layer.v1+tar"];
-    let blob = get_layer_bytes(image, accepted_media_types).await.context("Failed to pull archive bytes")?;
+    let blob = get_layer_bytes(image, accepted_media_types)
+        .await
+        .context("Failed to pull archive bytes")?;
 
     log::debug!("pull_archive_bytes: Pulled {} bytes for {}", blob.len(), &image.0);
 
@@ -441,7 +445,10 @@ pub async fn pull_archive_bytes(image: &OciReference) -> Result<Vec<u8>> {
 async fn get_layer_bytes(OciReference(image): &OciReference, accepted_media_types: Vec<&str>) -> Result<Vec<u8>> {
     let auth = RegistryAuth::Anonymous;
     let client = Client::new(Default::default());
-    let image_data = client.pull(image, &auth, accepted_media_types).await.context("Failed to pull image data")?;
+    let image_data = client
+        .pull(image, &auth, accepted_media_types)
+        .await
+        .context("Failed to pull image data")?;
     let blob = image_data
         .layers
         .into_iter()
