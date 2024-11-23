@@ -415,8 +415,8 @@ pub async fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<()> 
     log::debug!("pull_devcontainer_index");
 
     let image: OciReference = "ghcr.io/devcontainers/index:latest".parse()?;
-    let accepted_media_types = vec!["application/vnd.devcontainers.index.layer.v1+json"];
-    let blob = get_layer_bytes(&image, accepted_media_types)
+    let media_type = "application/vnd.devcontainers.index.layer.v1+json";
+    let blob = get_layer_bytes(&image, media_type)
         .await
         .context("Failed to pull devcontainer index")?;
     let mut file = File::create(filename)?;
@@ -432,8 +432,8 @@ pub async fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<()> 
 pub async fn pull_archive_bytes(image: &OciReference) -> Result<Vec<u8>> {
     log::debug!("pull_archive_bytes");
 
-    let accepted_media_types = vec!["application/vnd.devcontainers.layer.v1+tar"];
-    let blob = get_layer_bytes(image, accepted_media_types)
+    let media_type = "application/vnd.devcontainers.layer.v1+tar";
+    let blob = get_layer_bytes(image, media_type)
         .await
         .context("Failed to pull archive bytes")?;
 
@@ -442,9 +442,10 @@ pub async fn pull_archive_bytes(image: &OciReference) -> Result<Vec<u8>> {
     Ok(blob)
 }
 
-async fn get_layer_bytes(OciReference(image): &OciReference, accepted_media_types: Vec<&str>) -> Result<Vec<u8>> {
+async fn get_layer_bytes(OciReference(image): &OciReference, media_type: &str) -> Result<Vec<u8>> {
     let auth = RegistryAuth::Anonymous;
     let client = Client::new(Default::default());
+    let accepted_media_types = vec![media_type];
     let image_data = client
         .pull(image, &auth, accepted_media_types)
         .await
