@@ -6,11 +6,10 @@ use std::ops::Not;
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use ocipkg::distribution::MediaType;
-use ocipkg::image::{Artifact, Image};
-use ocipkg::{Digest, ImageName};
-use serde::{Deserialize, Serialize};
+use oci_client::Client;
+use oci_client::secrets::RegistryAuth;
 use serde_json::Value as JsonValue;
+use serde::{Deserialize, Serialize};
 
 use crate::oci_ref::OciReference;
 
@@ -412,15 +411,12 @@ impl DevcontainerIndex {
 }
 
 /// Pull OCI Artifact "ghcr.io/devcontainers/index:latest" and download the JSON layer to the given filename.
-pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<()> {
+pub async fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<()> {
     log::debug!("pull_devcontainer_index");
 
-    let image_name = ImageName::parse("ghcr.io/devcontainers/index:latest")?;
-    let blob = get_layer_bytes(&image_name, |media_type| match media_type {
-        MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.index.layer.v1+json",
-        _ => false,
-    })
-    .context("Failed to pull devcontainer index")?;
+    let image: OciReference = "ghcr.io/devcontainers/index:latest".parse()?;
+    let accepted_media_types = vec!["application/vnd.devcontainers.index.layer.v1+json"];
+    let blob = get_layer_bytes(&image, accepted_media_types).await.context("Failed to pull devcontainer index")?;
     let mut file = File::create(filename)?;
 
     file.write_all(&blob[..])?;
@@ -431,32 +427,28 @@ pub fn pull_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<()> {
 }
 
 /// Pull bytes of the given OCI artifact, which is a reference to a given Feature or Template tar archive.
-pub fn pull_archive_bytes(oci_ref: &OciReference) -> Result<Vec<u8>> {
+pub async fn pull_archive_bytes(image: &OciReference) -> Result<Vec<u8>> {
     log::debug!("pull_archive_bytes");
 
-    let OciReference(image_name) = oci_ref;
-    let blob = get_layer_bytes(image_name, |media_type| match media_type {
-        MediaType::Other(other_type) => other_type == "application/vnd.devcontainers.layer.v1+tar",
-        _ => false,
-    })
-    .context("Failed to pull archive bytes")?;
+    let accepted_media_types = vec!["application/vnd.devcontainers.layer.v1+tar"];
+    let blob = get_layer_bytes(image, accepted_media_types).await.context("Failed to pull archive bytes")?;
 
-    log::debug!("pull_archive_bytes: Pulled {} bytes for {}", blob.len(), &image_name);
+    log::debug!("pull_archive_bytes: Pulled {} bytes for {}", blob.len(), &image.0);
 
     Ok(blob)
 }
 
-fn get_layer_bytes(image_name: &ImageName, f: impl Fn(&MediaType) -> bool) -> Result<Vec<u8>> {
-    let mut artifact = Artifact::from_remote(image_name.clone())?;
-    let manifest = artifact.get_manifest()?;
-    let layer = manifest
-        .layers()
-        .iter()
-        .find(|&d| f(d.media_type()))
-        .ok_or_else(|| anyhow::anyhow!("Missing Layer"))?;
-    let digest = Digest::new(layer.digest())?;
-
-    artifact.get_blob(&digest)
+async fn get_layer_bytes(OciReference(image): &OciReference, accepted_media_types: Vec<&str>) -> Result<Vec<u8>> {
+    let auth = RegistryAuth::Anonymous;
+    let client = Client::new(Default::default());
+    let image_data = client.pull(image, &auth, accepted_media_types).await.context("Failed to pull image data")?;
+    let blob = image_data
+        .layers
+        .into_iter()
+        .next()
+        .context("Missing Layer")
+        .map(|layer| layer.data)?;
+    Ok(blob)
 }
 
 /// Read and parse the given filename.

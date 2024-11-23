@@ -61,7 +61,8 @@ fn data_directory<P: AsRef<Path>>(namespace: P) -> io::Result<PathBuf> {
     }
 }
 
-fn main() -> Result<(), anyhow::Error> {
+#[tokio::main]
+async fn main() -> Result<(), anyhow::Error> {
     let args = Args::parse();
 
     env_logger::Builder::new()
@@ -86,7 +87,7 @@ fn main() -> Result<(), anyhow::Error> {
             fs::create_dir_all(&data_dir)?;
         }
 
-        registry::pull_devcontainer_index(&index_file)?;
+        registry::pull_devcontainer_index(&index_file).await?;
         log::info!("Saved to {}", index_file.display());
     }
 
@@ -104,8 +105,8 @@ fn main() -> Result<(), anyhow::Error> {
         match command {
             #[cfg(feature = "completions")]
             Commands::Completions { .. } => unreachable!(),
-            Commands::Init(args) => init::init(&index, args)?,
-            Commands::Inspect(args) => inspect::inspect(&index, args)?,
+            Commands::Init(args) => init::init(&index, args).await?,
+            Commands::Inspect(args) => inspect::inspect(&index, args).await?,
             Commands::List(args) => list::list(&index, args),
             Commands::Search(args) => search::search(&index, args)?,
         };
