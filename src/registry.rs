@@ -456,6 +456,7 @@ async fn get_layer_bytes(OciReference(image): &OciReference, media_type: &str) -
         .next()
         .context("Missing Layer")
         .map(|layer| layer.data)?;
+
     Ok(blob)
 }
 
