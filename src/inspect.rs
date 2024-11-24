@@ -217,10 +217,10 @@ fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> serde
     Ok(())
 }
 
-fn display_files(oci_ref: &OciReference) -> anyhow::Result<()> {
+async fn display_files(oci_ref: &OciReference) -> anyhow::Result<()> {
     log::debug!("display_files");
 
-    let bytes = registry::pull_archive_bytes(oci_ref)?;
+    let bytes = registry::pull_archive_bytes(oci_ref).await?;
     let mut archive = Archive::new(bytes.as_slice());
     let entries = archive.entries()?;
 
@@ -241,10 +241,10 @@ fn display_files(oci_ref: &OciReference) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn display_install_sh(oci_ref: &OciReference) -> anyhow::Result<()> {
+async fn display_install_sh(oci_ref: &OciReference) -> anyhow::Result<()> {
     log::debug!("display_install_sh");
 
-    let bytes = registry::pull_archive_bytes(oci_ref)?;
+    let bytes = registry::pull_archive_bytes(oci_ref).await?;
     let mut archive = Archive::new(bytes.as_slice());
     let entries = archive.entries()?;
 
@@ -268,7 +268,7 @@ fn display_install_sh(oci_ref: &OciReference) -> anyhow::Result<()> {
     ))?
 }
 
-pub fn inspect(
+pub async fn inspect(
     index: &registry::DevcontainerIndex,
     InspectArgs {
         oci_ref,
@@ -300,11 +300,11 @@ pub fn inspect(
             display(f, &display_as)?;
 
             if show_files {
-                display_files(&oci_ref)?;
+                display_files(&oci_ref).await?;
             }
 
             if install_sh {
-                display_install_sh(&oci_ref)?;
+                display_install_sh(&oci_ref).await?;
             }
 
             Ok(())
@@ -314,7 +314,7 @@ pub fn inspect(
             display(t, &display_as)?;
 
             if show_files {
-                display_files(&oci_ref)?;
+                display_files(&oci_ref).await?;
             }
 
             if install_sh {

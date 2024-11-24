@@ -47,18 +47,21 @@ pub struct InitArgs {
     workspace_folder: Option<PathBuf>,
 }
 
-fn get_feature(index: &registry::DevcontainerIndex, feature_ref: &OciReference) -> anyhow::Result<registry::Feature> {
+async fn get_feature(
+    index: &registry::DevcontainerIndex,
+    feature_ref: &OciReference,
+) -> anyhow::Result<registry::Feature> {
     log::debug!("get_feature");
 
     match index.get_feature(&feature_ref.id()) {
         Some(feature) => Ok(feature.clone()),
-        None => pull_feature_configuration(feature_ref),
+        None => pull_feature_configuration(feature_ref).await,
     }
 }
 
-fn pull_feature_configuration(feature_ref: &OciReference) -> anyhow::Result<registry::Feature> {
+async fn pull_feature_configuration(feature_ref: &OciReference) -> anyhow::Result<registry::Feature> {
     log::debug!("pull_feature_configuration");
-    let bytes = registry::pull_archive_bytes(feature_ref)?;
+    let bytes = registry::pull_archive_bytes(feature_ref).await?;
     let mut archive = Archive::new(bytes.as_slice());
     let entries = archive.entries()?;
 
@@ -331,9 +334,9 @@ struct TemplateBuilder {
 }
 
 impl TemplateBuilder {
-    fn new(template_ref: &OciReference, config: Option<registry::Template>) -> anyhow::Result<Self> {
+    async fn new(template_ref: &OciReference, config: Option<registry::Template>) -> anyhow::Result<Self> {
         log::debug!("TemplateBuilder::new");
-        let archive_bytes = registry::pull_archive_bytes(template_ref)?;
+        let archive_bytes = registry::pull_archive_bytes(template_ref).await?;
         let template_archive = TemplateBuilder {
             config,
             context: HashMap::new(),
@@ -677,7 +680,7 @@ impl Display for PromptEntryAction {
     }
 }
 
-pub fn init(
+pub async fn init(
     index: &registry::DevcontainerIndex,
     InitArgs {
         non_interactive,
@@ -715,7 +718,7 @@ pub fn init(
             let id = template_ref.id();
             let template = index.get_template(&id);
 
-            TemplateBuilder::new(template_ref, template.cloned())?
+            TemplateBuilder::new(template_ref, template.cloned()).await?
         },
         None if non_interactive => Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -742,13 +745,13 @@ pub fn init(
                         inquire::Select::new("Pick existing template from the index:", template_ids).prompt()?;
                     let template_ref = template_id.parse()?;
                     let template = index.get_template(&template_id);
-                    TemplateBuilder::new(&template_ref, template.cloned())?
+                    TemplateBuilder::new(&template_ref, template.cloned()).await?
                 },
                 PromptEntryAction::Enter => {
                     let template_id = inquire::Text::new("Enter template by providing the OCI reference:").prompt()?;
                     let template_ref = template_id.parse()?;
                     let template = index.get_template(&template_id);
-                    TemplateBuilder::new(&template_ref, template.cloned())?
+                    TemplateBuilder::new(&template_ref, template.cloned()).await?
                 },
                 PromptEntryAction::Empty => TemplateBuilder::create_empty_start_point()?,
             }
@@ -768,7 +771,7 @@ pub fn init(
 
         if let Some(feature_refs) = include_features {
             for feature_ref in feature_refs {
-                let feature = get_feature(index, &feature_ref)?;
+                let feature = get_feature(index, &feature_ref).await?;
                 log::info!("Adding feature: {}", feature_ref.id());
                 template_builder.features.use_default_values(&feature);
             }
@@ -778,7 +781,7 @@ pub fn init(
 
         if let Some(feature_refs) = include_features {
             for feature_ref in feature_refs {
-                let feature = get_feature(index, &feature_ref)?;
+                let feature = get_feature(index, &feature_ref).await?;
                 println!("Adding feature: {}", feature_ref.id());
                 template_builder.features.use_prompt_values(&feature)?;
             }
@@ -793,7 +796,7 @@ pub fn init(
                     .with_autocomplete(features_autocomplete)
                     .prompt()?;
                 let feature_ref: OciReference = input.parse()?;
-                let feature = get_feature(index, &feature_ref)?;
+                let feature = get_feature(index, &feature_ref).await?;
 
                 template_builder.features.use_prompt_values(&feature)?;
             } else {
