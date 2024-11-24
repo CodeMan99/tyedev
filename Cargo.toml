@@ -1,6 +1,6 @@
 [package]
 name = "tyedev"
-version = "0.3.4"
+version = "0.4.0"
 edition = "2021"
 description = "Create and manage devcontainer configuration"
 repository = "https://github.com/CodeMan99/tyedev"
@@ -17,28 +17,28 @@ bin-dir = "{ name }-{ version }-{ target }/{ bin }{ binary-ext }"
 pkg-fmt = "tgz"
 
 [dependencies]
-anyhow = { version = "1.0.86", features = ["backtrace"] }
-clap = { version = "4.5.11", features = ["derive", "wrap_help"] }
-clap_complete = { version = "4.5.11", optional = true }
-clap-verbosity-flag = "2.2.1"
+anyhow = { version = "1.0.93", features = ["backtrace"] }
+clap = { version = "4.5.21", features = ["derive", "wrap_help"] }
+clap_complete = { version = "4.5.38", optional = true }
+clap-verbosity-flag = "2.2.3"
 dirs = "5.0.1"
 env_logger = "0.11.5"
 human_format = "1.1.0"
 inquire = { version = "0.6.2", features = ["editor"] }
 log = "0.4.22"
 oci-client = "0.14.0"
-regex = "1.10.5"
-serde = { version = "1.0.204", features = ["derive"] }
-serde_json = { version = "1.0.108", features = ["preserve_order"] }
+regex = "1.11.1"
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = { version = "1.0.133", features = ["preserve_order"] }
 serde_jsonc = { version = "1.0.108", features = ["preserve_order"] }
-tar = "0.4.41"
+tar = "0.4.43"
 tokio = { version = "1.41.1", features = ["macros", "rt-multi-thread"] }
 
 [target.'cfg(windows)'.dependencies]
-ascii_table = "4.0.3"
+ascii_table = "4.0.5"
 
 [target.'cfg(unix)'.dependencies]
-ascii_table = { version = "4.0.3", features = ["auto_table_width"] }
+ascii_table = { version = "4.0.5", features = ["auto_table_width"] }
 
 [features]
 default = ["completions"]
