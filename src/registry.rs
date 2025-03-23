@@ -376,7 +376,7 @@ impl DevcontainerIndex {
 
     pub fn iter_features(&self, include_deprecated: bool) -> impl Iterator<Item = &Feature> {
         let all = |_: &&Feature| true;
-        let not_deprecated = |&feature: &&Feature| feature.deprecated.map_or(true, Not::not);
+        let not_deprecated = |&feature: &&Feature| feature.deprecated.is_none_or(Not::not);
 
         self.collections
             .iter()
