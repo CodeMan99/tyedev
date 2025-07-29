@@ -94,10 +94,7 @@ async fn main() -> Result<(), anyhow::Error> {
     if let Some(command) = args.command {
         if !index_file.exists() {
             // suggested user action
-            log::error!(
-                "Missing devcontainer-index.json.\n\n\tRun `{} --pull-index`.\n",
-                BIN_NAME
-            );
+            log::error!("Missing devcontainer-index.json.\n\n\tRun `{BIN_NAME} --pull-index`.\n");
         }
 
         let index = registry::read_devcontainer_index(index_file)?;

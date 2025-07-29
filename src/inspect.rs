@@ -206,7 +206,7 @@ impl Displayable for registry::Template {
 }
 
 fn display<T: ?Sized + Displayable>(value: &T, format: &InspectDisplay) -> serde_json::error::Result<()> {
-    log::debug!("display: as {}", format);
+    log::debug!("display: as {format}");
 
     match format {
         InspectDisplay::Json => value.display_json()?,
