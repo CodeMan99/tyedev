@@ -76,7 +76,7 @@ async fn pull_feature_configuration(feature_ref: &OciReference) -> anyhow::Resul
             entry.read_to_end(&mut data)?;
             let feature: registry::Feature = serde_json::from_slice(data.as_slice())?;
 
-            log::debug!("pull_feature_configuration: read {} bytes", size);
+            log::debug!("pull_feature_configuration: read {size} bytes");
 
             return Ok(feature);
         }
@@ -367,7 +367,7 @@ impl TemplateBuilder {
                 let config = serde_json::from_slice(data.as_slice())?;
 
                 self.config.replace(config);
-                log::debug!("TemplateBuilder::replace_config: read {} bytes", size);
+                log::debug!("TemplateBuilder::replace_config: read {size} bytes");
 
                 return Ok(());
             }
@@ -384,7 +384,7 @@ impl TemplateBuilder {
         let config = self
             .config
             .as_ref()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Missing configuration"))?;
+            .ok_or_else(|| io::Error::other("Missing configuration"))?;
 
         if let Some(options) = &config.options {
             self.context.clear();
@@ -404,7 +404,7 @@ impl TemplateBuilder {
         let config = self
             .config
             .as_ref()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Missing configuration"))?;
+            .ok_or_else(|| io::Error::other("Missing configuration"))?;
 
         if let Some(options) = &config.options {
             let all_defaults = options
