@@ -384,7 +384,7 @@ impl TemplateBuilder {
         let config = self
             .config
             .as_ref()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Missing configuration"))?;
+            .ok_or_else(|| io::Error::other("Missing configuration"))?;
 
         if let Some(options) = &config.options {
             self.context.clear();
@@ -404,7 +404,7 @@ impl TemplateBuilder {
         let config = self
             .config
             .as_ref()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Missing configuration"))?;
+            .ok_or_else(|| io::Error::other("Missing configuration"))?;
 
         if let Some(options) = &config.options {
             let all_defaults = options
