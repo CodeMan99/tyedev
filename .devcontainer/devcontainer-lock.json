@@ -1,0 +1,34 @@
+{
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "1.3.5",
+      "resolved": "ghcr.io/devcontainers/features/git@sha256:27905dc196c01f77d6ba8709cb82eeaf330b3b108772e2f02d1cd0d826de1251",
+      "integrity": "sha256:27905dc196c01f77d6ba8709cb82eeaf330b3b108772e2f02d1cd0d826de1251"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "1.1.0",
+      "resolved": "ghcr.io/devcontainers/features/github-cli@sha256:d22f50b70ed75339b4eed1ba9ecde3a1791f90e88d37936517e3bace0bbad671",
+      "integrity": "sha256:d22f50b70ed75339b4eed1ba9ecde3a1791f90e88d37936517e3bace0bbad671"
+    },
+    "ghcr.io/dhoeric/features/oras:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/dhoeric/features/oras@sha256:d08787b42a60d49b001260e00967fd2206326f552e5f7f09ce2535de2f351d8d",
+      "integrity": "sha256:d08787b42a60d49b001260e00967fd2206326f552e5f7f09ce2535de2f351d8d"
+    },
+    "ghcr.io/lee-orr/rusty-dev-containers/bacon:0": {
+      "version": "0.1.8",
+      "resolved": "ghcr.io/lee-orr/rusty-dev-containers/bacon@sha256:30c095906e92e601f18027a4dfcc041fa18cee1832c1cbc6da6e54e247e756ad",
+      "integrity": "sha256:30c095906e92e601f18027a4dfcc041fa18cee1832c1cbc6da6e54e247e756ad"
+    },
+    "ghcr.io/lee-orr/rusty-dev-containers/cargo-binstall:0": {
+      "version": "0.1.8",
+      "resolved": "ghcr.io/lee-orr/rusty-dev-containers/cargo-binstall@sha256:8eb234bd3165a608bcba39892fac7f0be45ed9604084881c7f113c0115d25162",
+      "integrity": "sha256:8eb234bd3165a608bcba39892fac7f0be45ed9604084881c7f113c0115d25162"
+    },
+    "ghcr.io/lee-orr/rusty-dev-containers/cargo-watch:0": {
+      "version": "0.1.8",
+      "resolved": "ghcr.io/lee-orr/rusty-dev-containers/cargo-watch@sha256:15bea4223a1ad9e54cf176b09fe32ba1c7281257a5ded1c93d8d69d4924e57a7",
+      "integrity": "sha256:15bea4223a1ad9e54cf176b09fe32ba1c7281257a5ded1c93d8d69d4924e57a7"
+    }
+  }
+}
