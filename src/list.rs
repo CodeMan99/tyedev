@@ -16,11 +16,11 @@ fn collection_templates_and_features(oci_reference: &str, collection: &Collectio
 
     let source_information = &collection.source_information;
 
-    println!("Name:          {}", &source_information.name);
-    println!("Maintainer:    {}", &source_information.maintainer);
-    println!("Contact:       {}", &source_information.contact);
-    println!("Repository:    {}", &source_information.repository);
-    println!("OCI Reference: {}", &source_information.oci_reference);
+    println!("Name:          {}", source_information.name);
+    println!("Maintainer:    {}", source_information.maintainer);
+    println!("Contact:       {}", source_information.contact);
+    println!("Repository:    {}", source_information.repository);
+    println!("OCI Reference: {}", source_information.oci_reference);
 
     let count = collection.features.len() + collection.templates.len();
 

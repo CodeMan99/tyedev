@@ -169,7 +169,7 @@ pub fn search(
 
     let search_fields =
         fields.unwrap_or_else(|| vec![SearchFields::Id, SearchFields::Name, SearchFields::Description]);
-    log::debug!("search: search_fields = {:?}", &search_fields);
+    log::debug!("search: search_fields = {search_fields:?}");
     let results: Vec<SearchResult> = match collection {
         CollectionCategory::Features => {
             log::debug!("search: features");
