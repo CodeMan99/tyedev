@@ -437,7 +437,7 @@ pub async fn pull_archive_bytes(image: &OciReference) -> Result<Vec<u8>> {
         .await
         .context("Failed to pull archive bytes")?;
 
-    log::debug!("pull_archive_bytes: Pulled {} bytes for {}", blob.len(), &image.0);
+    log::debug!("pull_archive_bytes: Pulled {} bytes for {}", blob.len(), image.0);
 
     Ok(blob)
 }
@@ -493,7 +493,7 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
                             None => {
                                 log::warn!(
                                     "Skipping collection due to parse error. The `features` field is not an array. Collection.oci_ref = {}",
-                                    &source_information.oci_reference
+                                    source_information.oci_reference
                                 );
                                 None
                             },
@@ -508,7 +508,7 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
                                 Err(_) => {
                                     log::warn!(
                                         "Skipping feature due to parsing error. Collection.oci_ref = {}",
-                                        &source_information.oci_reference
+                                        source_information.oci_reference
                                     );
                                     None
                                 },
@@ -519,7 +519,7 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
                             None => {
                                 log::warn!(
                                     "Skipping collection due to parsing error. The `templates` field is not an array. Collection.oci_ref = {}",
-                                    &source_information.oci_reference,
+                                    source_information.oci_reference,
                                 );
                                 None
                             },
@@ -534,7 +534,7 @@ pub fn read_devcontainer_index<P: AsRef<Path>>(filename: P) -> Result<Devcontain
                                 Err(_) => {
                                     log::warn!(
                                         "Skipping template due to parsing error. Collection.oci_ref = {}",
-                                        &source_information.oci_reference
+                                        source_information.oci_reference
                                     );
                                     None
                                 },
