@@ -24,7 +24,7 @@ jobs:
           - os: windows-latest
             rust_target: x86_64-pc-windows-msvc
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Rust
         id: toolchain
         uses: dtolnay/rust-toolchain@stable
