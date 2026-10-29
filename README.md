@@ -7,25 +7,20 @@ Create and manage devcontainer configuration.
 
 ## Install
 
-The preferred method is to use [cargo binstall](https://github.com/cargo-bins/cargo-binstall).
+The release assets include x86_64 builds for Linux, macOS, Windows; and aarch64 builds for macOS.
 
 ```shell
-$ cargo binstall tyedev
-```
-
-Alternatively, download the appropiate [release asset](https://github.com/CodeMan99/tyedev/releases/latest). Then extract and copy as needed.
-
-```shell
-$ shasum --check tyedev-*.sha256
-$ tar -xzf tyedev-*.tar.gz
-$ cp tyedev-*/tyedev ~/.local/bin
-```
-
-The last method is to use the [Github CLI](https://github.com/cli/cli) with the [redraw/gh-install](https://github.com/redraw/gh-install) extension.
-
-```shell
+$ cargo binstall tyedev                  # release asset or builds from source
 $ gh ext install redraw/gh-install
-$ gh install CodeMan99/tyedev
+$ gh install CodeMan99/tyedev            # release asset only
+```
+
+### Homebrew
+
+A homebrew bottle is available from my tap.
+
+```shell
+$ brew install codeman99/tap/tyedev
 ```
 
 ## Usage
